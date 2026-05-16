@@ -45,6 +45,18 @@ contract FoodTrace is Ownable, AccessControl {
         address actor;
     }
     mapping(uint256 => StatusLog[]) public history;
+    // Lưu thông tin vận chuyển
+    struct TransportRecord {
+        Status status; // trạng thái hiện tại
+        string location; // địa điểm
+        int temperature; // nhiệt độ
+        uint256 timestamp; // thời gian cập nhật
+        address operator; // người cập nhật
+    }
+
+    // Lưu lịch sử vận chuyển của từng lô hàng
+    mapping(uint256 => TransportRecord[])
+        public transportHistory;
     // SỰ KIỆN
     event FarmAdded(address indexed farmer, string name);
     event BatchCreated(uint256 batchId, string name, address farmer);
@@ -54,6 +66,20 @@ contract FoodTrace is Ownable, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(INSPECTOR_ROLE, msg.sender);
     }
+    // Event cập nhật vận chuyển
+    event TransportUpdated(
+        uint256 batchId,
+        string location,
+        int temperature,
+        Status status
+    );
+
+    // Event cảnh báo nhiệt độ
+    event TemperatureViolation(
+        uint256 batchId,
+        int temperature,
+        string warning
+    );
     // Chủ hệ thống thêm trang trại 
     function addFarm(address _farmer, string memory _name) external onlyOwner {
         require(!farms[_farmer].isVerified, "Trang trai da ton tai");
@@ -173,6 +199,31 @@ contract FoodTrace is Ownable, AccessControl {
         history[_batchId].push(
             StatusLog(_newStatus, block.timestamp, msg.sender)
         );
+    }
+     // Cập nhật vận chuyển
+    function updateTransport(uint256 _batchId, Status _status, string memory _location, int _temperature) external {
+        // Kiểm tra lô hàng còn hiệu lực
+        require(batches[_batchId].isActive, "Lo hang khong ton tai");
+        // Kiểm tra địa điểm
+        require(bytes(_location).length > 0, "Location required");
+        // Tạo record vận chuyển mới
+        TransportRecord memory record =
+            TransportRecord({status: _status, location: _location, temperature: _temperature, timestamp: block.timestamp, operator: msg.sender});
+        // Lưu lịch sử vận chuyển
+        transportHistory[_batchId].push(record);
+        // Cập nhật trạng thái lô hàng
+        batches[_batchId].status = _status;
+        // Kiểm tra nhiệt độ
+        checkTemperatureViolation(_batchId, _temperature);
+        // Phát event
+        emit TransportUpdated(_batchId, _location, _temperature, _status);
+    }
+    // Kiểm tra vi phạm nhiệt độ
+    function checkTemperatureViolation(uint256 _batchId, int _temperature) internal {
+        // Giả sử nhiệt độ an toàn là từ 0 đến 10 độ C
+        if (_temperature < 0 || _temperature > 10) {
+            emit TemperatureViolation(_batchId, _temperature, "Nhiet do khong an toan");
+        }
     }
     //Thu hồi sản phẩm
     function recallProduct(uint256 _batchId, string memory _reason) external {
