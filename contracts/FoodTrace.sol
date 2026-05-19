@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol"; 
 contract FoodTrace is Ownable, AccessControl {
+    constructor() Ownable(msg.sender) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _grantRole(INSPECTOR_ROLE, msg.sender);
+}
     bytes32 public constant FARMER_ROLE = keccak256("FARMER_ROLE");
     bytes32 public constant INSPECTOR_ROLE = keccak256("INSPECTOR_ROLE");
     // 1. CÁC TRẠNG THÁI CỦA SẢN PHẨM
@@ -60,12 +64,8 @@ contract FoodTrace is Ownable, AccessControl {
     // SỰ KIỆN
     event FarmAdded(address indexed farmer, string name);
     event BatchCreated(uint256 batchId, string name, address farmer);
-    event ProductSold(uint256 batchId, string qrCode, address buyer);
+    event ProductSold(uint256 batchId, bytes32 qrCode, address buyer);
     event ProductRecalled(uint256 batchId, string reason);
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(INSPECTOR_ROLE, msg.sender);
-    }
     // Event cập nhật vận chuyển
     event TransportUpdated(
         uint256 batchId,
@@ -246,5 +246,97 @@ contract FoodTrace is Ownable, AccessControl {
     function isProductValid(uint256 _batchId) external view returns (bool) {
         return batches[_batchId].isActive;
     }
-    
+    // Lưu lý do thu hồi
+    mapping(uint256 => string) public recallReasons;
+    // Event thu hồi lô hàng
+    event BatchRecalled(
+        uint256 indexed batchId,
+        string reason
+    );
+    // THU HỒI LÔ HÀNG
+    function recallBatch(
+        uint256 _batchId,
+        string memory _reason
+    ) external {
+        // Kiểm tra quyền: Chỉ farmer của lô hàng hoặc admin mới được thu hồi
+        require(
+            batches[_batchId].farmer == msg.sender ||
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender) ||
+            hasRole(INSPECTOR_ROLE, msg.sender), 
+            "Khong co quyen thu hoi"
+        );
+        // Kiểm tra lô hàng còn hoạt động
+        require(batches[_batchId].isActive, "Lo hang da o trang thai khong hoat dong");
+        require(bytes(_reason).length > 0, "Ly do thu hoi khong duoc de trong");
+        // Chuyển trạng thái sang Recalled
+        batches[_batchId].status = Status.Recalled;
+        // Vô hiệu hóa lô hàng
+        batches[_batchId].isActive = false;
+        // Lưu lý do thu hồi
+        recallReasons[_batchId] = _reason;
+        // Ghi lịch sử
+        history[_batchId].push(
+            StatusLog(
+                Status.Recalled,
+            	block.timestamp,
+            	msg.sender
+            )
+        );
+        // Phát event
+        emit BatchRecalled(
+            _batchId,
+        	_reason
+        );
+    }
+    // TRA CỨU TOÀN BỘ THÔNG TIN
+    function getBatchFullInfo(uint256 _batchId)
+        external
+        view
+        returns (
+   		    Batch memory batchInfo,
+        	TransportRecord[] memory transportLogs,
+        	string memory recallReason)
+    {
+        require(
+            _batchId > 0 &&
+        	_batchId <= batchCounter,
+        	"Batch khong ton tai"
+        );
+        return (
+            batches[_batchId],
+        	transportHistory[_batchId],
+        	recallReasons[_batchId]
+        );
+    }
+    // KIỂM TRA ĐỘ AN TOÀN
+    function isProductSafe(uint256 _batchId)
+        external
+    	view
+    	returns (
+        	bool isSafe,
+        	string memory message)
+    {
+    	Batch memory b = batches[_batchId];
+        // Kiểm tra xem lô hàng có bị thu hồi hoặc ngắt hoạt động không
+        if (
+        	!b.isActive ||
+        	b.status == Status.Recalled
+        ) {
+        	return (
+                false,
+            	string(abi.encodePacked("Lo hang da bi thu hoi. Ly do: ",recallReasons[_batchId] ) ) );
+        }
+        // Duyệt qua lịch sử vận chuyển để tìm vi phạm nhiệt độ 
+        TransportRecord[] memory records = transportHistory[_batchId];
+    	for (uint256 i = 0; i < records.length; i++) {
+            // Ngưỡng an toàn: 0°C → 10°C
+            if (
+          	    records[i].temperature < 0 ||
+            	records[i].temperature > 10
+            ) {
+                return (false, "San pham khong an toan do vi pham nhiet do bao quan trong qua trinh van chuyen ");
+            }
+        }
+        return (true, "San pham an toan" );
+    }
 }
