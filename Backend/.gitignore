@@ -1,0 +1,4 @@
+.env
+node_modules
+//Ý nghĩa .env → không cho GitHub upload API key bí mật
+// node_modules → không upload thư viện nặng lên GitHub

@@ -1,0 +1,21 @@
+{
+  "productName": "Rau cải ngọt",
+
+  "origin": "Lâm Đồng",
+
+  "description":
+    "Rau sạch đạt chuẩn CERTIFICATE OF COMPLIANCE WITH FOOD SAFETY REGULATIONS.",
+
+  "certifications": [
+    {
+      "name": "CERTIFICATE OF COMPLIANCE WITH FOOD SAFETY REGULATIONS",
+
+      "certificateUrl":
+        "https://gateway.pinata.cloud/ipfs/QmWnAsi9pYSN5diNsumLtRVDUaT25aUBWQoJf7Eqxtp58h"
+    }
+  ],
+
+  "imageUrls": [
+    "https://gateway.pinata.cloud/ipfs/QmPMAL6CCaspL62esEZe3UZk2Q4E9b5ubu17sNGmCRHCCG"
+  ]
+}

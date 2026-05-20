@@ -1,0 +1,21 @@
+{
+  "productName": "Cà phê Hữu cơ Buôn Ma Thuột",
+
+  "origin": "Buôn Ma Thuột",
+
+  "description":
+    "Cà phê organic chất lượng cao.",
+
+  "certifications": [
+    {
+      "name": "Organic",
+
+      "certificateUrl":
+        "https://gateway.pinata.cloud/ipfs/Qmc13CRr4S7MTkAK5q1fHD3tDDSuwFcFFLqkZPf9Gx5e3o"
+    }
+  ],
+
+  "imageUrls": [
+    "https://gateway.pinata.cloud/ipfs/QmUuBQ4Smm8pLfobvMKCQhfhuCtENfbTkfGdC5A4NMc6Mm"
+  ]
+}
