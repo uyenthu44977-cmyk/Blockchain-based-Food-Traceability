@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+  background: #020617;
+  overflow-x: hidden;
+  color: white;
+}
+
+/* animated background */
+
+body::before {
+  content: "";
+  position: fixed;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(0,255,200,0.25), transparent 70%);
+  top: -200px;
+  left: -200px;
+  animation: move1 10s infinite alternate;
+  z-index: -1;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(0,150,255,0.2), transparent 70%);
+  bottom: -200px;
+  right: -200px;
+  animation: move2 12s infinite alternate;
+  z-index: -1;
+}
+
+@keyframes move1 {
+  from {
+    transform: translate(0px, 0px);
+  }
+
+  to {
+    transform: translate(100px, 80px);
+  }
+}
+
+@keyframes move2 {
+  from {
+    transform: translate(0px, 0px);
+  }
+
+  to {
+    transform: translate(-120px, -60px);
+  }
+}
