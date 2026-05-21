@@ -1,22 +1,26 @@
 // Import hàm upload JSON
 const {
   uploadJSONToIPFS,
-} = require("./services/pinataService");
+} = require("../services/pinataService");
 
-// Import thư viện đọc file
+// Thư viện đọc file
 const fs = require("fs");
 
-// Hàm test upload metadata
+// Hàm upload metadata
 async function testMetadataUpload() {
 
   // Đọc file coffee.json
-  const coffeeData = JSON.parse(
-    fs.readFileSync("./metadata/coffee.json")
+  const metadata = JSON.parse(
+
+    fs.readFileSync(
+      "./metadata/vegetable.json"
+    )
+
   );
 
   // Upload metadata lên IPFS
   const result =
-    await uploadJSONToIPFS(coffeeData);
+    await uploadJSONToIPFS(metadata);
 
   // In kết quả
   console.log(result);
@@ -24,3 +28,4 @@ async function testMetadataUpload() {
 
 // Chạy hàm
 testMetadataUpload();
+

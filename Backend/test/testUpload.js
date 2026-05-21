@@ -1,5 +1,5 @@
 // Import hàm uploadToIPFS từ pinataService
-const { uploadToIPFS } = require("./services/pinataService");
+const { uploadToIPFS } = require("../services/pinataService");
 
 // Hàm test upload ảnh
 async function testUpload() {

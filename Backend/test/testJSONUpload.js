@@ -1,7 +1,7 @@
 // Import hàm uploadJSONToIPFS
 const {
   uploadJSONToIPFS,
-} = require("./services/pinataService");
+} = require("../services/pinataService");
 
 // Hàm test upload metadata JSON
 async function testJSONUpload() {
