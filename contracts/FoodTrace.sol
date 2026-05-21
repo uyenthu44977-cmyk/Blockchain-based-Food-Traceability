@@ -220,11 +220,23 @@ contract FoodTrace is Ownable, AccessControl {
     }
     // Kiểm tra vi phạm nhiệt độ
     function checkTemperatureViolation(uint256 _batchId, int _temperature) internal {
-        // Giả sử nhiệt độ an toàn là từ 0 đến 10 độ C
-        if (_temperature < 0 || _temperature > 10) {
-            emit TemperatureViolation(_batchId, _temperature, "Nhiet do khong an toan");
+        string memory product = batches[_batchId].name;
+        // Kiểm tra thịt
+        if (keccak256(bytes(product)) == keccak256(bytes("Thit"))) {
+            if (_temperature < 0 || _temperature > 4)
+            {emit TemperatureViolation(_batchId, _temperature, "Nhiet do thit khong an toan");}
         }
-    }
+        // Kiểm tra rau củ quả
+        else if (keccak256(bytes(product)) == keccak256(bytes("Rau cu qua"))) {
+            if (_temperature < 0 || _temperature > 15) {
+            emit TemperatureViolation( _batchId, _temperature, "Nhiet do rau cu qua khong an toan");}
+        }
+        // Kiểm tra các loại hạt
+        else if (keccak256(bytes(product)) == keccak256(bytes("Hat"))) {
+            if (_temperature < 10 || _temperature > 20) {
+            emit TemperatureViolation(_batchId, _temperature, "Nhiet do hat khong an toan"); }
+        }
+    }  
     //Thu hồi sản phẩm
     function recallProduct(uint256 _batchId, string memory _reason) external {
         require(batches[_batchId].farmer == msg.sender || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Khong co quyen");
