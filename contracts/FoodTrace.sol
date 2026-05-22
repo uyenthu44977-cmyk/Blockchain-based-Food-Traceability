@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol"; 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 contract FoodTrace is Ownable, AccessControl {
     constructor() Ownable(msg.sender) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -13,32 +13,32 @@ contract FoodTrace is Ownable, AccessControl {
     enum Status {
         Created,      
         Harvested,    
-        Processing,   
-        Transporting, 
+        Processing,  
+        Transporting,
         Delivered,    
         Recalled      
     }
     // 2. THÔNG TIN LÔ HÀNG
     struct Batch {
         uint256 id;
-        string name;           
-        string origin;         
-        string certHash;       
+        string name;          
+        string origin;        
+        string certHash;      
         Status status;
         address farmer;        
         uint256 harvestedAt;
         bool isActive;
-        bytes32 productHash; 
+        bytes32 productHash;
     }
     // 3. THÔNG TIN TRANG TRẠI
     struct Farm {
         string name;
         bool isVerified;
     }
-    // 4. LƯU TRỮ DỮ LIỆU 
-    mapping(address => Farm) public farms;           
+    // 4. LƯU TRỮ DỮ LIỆU
+    mapping(address => Farm) public farms;          
     mapping(uint256 => Batch) public batches;        
-    mapping(bytes32 => bool) public qrUsed; 
+    mapping(bytes32 => bool) public qrUsed;
     mapping(uint256 => bool) public batchSold;
     address[] public farmList;
     uint256 public batchCounter;
@@ -58,6 +58,7 @@ contract FoodTrace is Ownable, AccessControl {
         address operator; // người cập nhật
     }
 
+
     // Lưu lịch sử vận chuyển của từng lô hàng
     mapping(uint256 => TransportRecord[])
         public transportHistory;
@@ -74,29 +75,30 @@ contract FoodTrace is Ownable, AccessControl {
         Status status
     );
 
+
     // Event cảnh báo nhiệt độ
     event TemperatureViolation(
         uint256 batchId,
         int temperature,
         string warning
     );
-    // Chủ hệ thống thêm trang trại 
+    // Chủ hệ thống thêm trang trại
     function addFarm(address _farmer, string memory _name) external onlyOwner {
         require(!farms[_farmer].isVerified, "Trang trai da ton tai");
         farms[_farmer] = Farm({
             name: _name,
             isVerified: true
-        }); 
+        });
         farmList.push(_farmer);
        _grantRole(FARMER_ROLE, _farmer);
         emit FarmAdded(_farmer, _name);
     }
-    // Xóa trang trại 
+    // Xóa trang trại
     function removeFarm(address _farmer) external onlyOwner {
         farms[_farmer].isVerified = false;
          _revokeRole(FARMER_ROLE, _farmer);
     }
-   // Tạo lô hàng mới 
+   // Tạo lô hàng mới
     function createBatch(
         string memory _name,
         string memory _origin,
@@ -142,20 +144,20 @@ contract FoodTrace is Ownable, AccessControl {
         require(batches[_batchId].farmer == msg.sender, "Khong co quyen ban");
         require(batches[_batchId].isActive, "San pham da bi thu hoi");
         require(_qrHash == batches[_batchId].productHash, "Ma QR khong hop le");
-        require(!qrUsed[_qrHash], "QR da duoc su dung"); 
+        require(!qrUsed[_qrHash], "QR da duoc su dung");
         require(!batchSold[_batchId], "Lo hang da ban roi");
         useQRCode(_batchId, _qrHash);
         batchSold[_batchId] = true;
-        batches[_batchId].status = Status.Delivered; 
+        batches[_batchId].status = Status.Delivered;
         history[_batchId].push(  
             StatusLog(Status.Delivered, block.timestamp, msg.sender)
         );
         emit ProductSold(_batchId, _qrHash, _buyer);
     }
     // Người dùng kiểm tra sản phẩm
-    function checkProduct(uint256 _batchId, bytes32 _qrHash) 
-        external 
-        view 
+    function checkProduct(uint256 _batchId, bytes32 _qrHash)
+        external
+        view
         returns (
             bool isReal,
             string memory productName,
@@ -170,7 +172,7 @@ contract FoodTrace is Ownable, AccessControl {
             return (false, "", "", "", Status.Created, address(0));
         }
         return (
-            true,                           
+            true,                          
             b.name,
             b.origin,
             b.certHash,
@@ -274,7 +276,7 @@ contract FoodTrace is Ownable, AccessControl {
         require(
             batches[_batchId].farmer == msg.sender ||
             hasRole(DEFAULT_ADMIN_ROLE, msg.sender) ||
-            hasRole(INSPECTOR_ROLE, msg.sender), 
+            hasRole(INSPECTOR_ROLE, msg.sender),
             "Khong co quyen thu hoi"
         );
         // Kiểm tra lô hàng còn hoạt động
@@ -290,14 +292,14 @@ contract FoodTrace is Ownable, AccessControl {
         history[_batchId].push(
             StatusLog(
                 Status.Recalled,
-            	block.timestamp,
-            	msg.sender
+                block.timestamp,
+                msg.sender
             )
         );
         // Phát event
         emit BatchRecalled(
             _batchId,
-        	_reason
+            _reason
         );
     }
     // TRA CỨU TOÀN BỘ THÔNG TIN
@@ -305,46 +307,46 @@ contract FoodTrace is Ownable, AccessControl {
         external
         view
         returns (
-   		    Batch memory batchInfo,
-        	TransportRecord[] memory transportLogs,
-        	string memory recallReason)
+            Batch memory batchInfo,
+            TransportRecord[] memory transportLogs,
+            string memory recallReason)
     {
         require(
             _batchId > 0 &&
-        	_batchId <= batchCounter,
-        	"Batch khong ton tai"
+            _batchId <= batchCounter,
+            "Batch khong ton tai"
         );
         return (
             batches[_batchId],
-        	transportHistory[_batchId],
-        	recallReasons[_batchId]
+            transportHistory[_batchId],
+            recallReasons[_batchId]
         );
     }
     // KIỂM TRA ĐỘ AN TOÀN
     function isProductSafe(uint256 _batchId)
         external
-    	view
-    	returns (
-        	bool isSafe,
-        	string memory message)
+        view
+        returns (
+            bool isSafe,
+            string memory message)
     {
-    	Batch memory b = batches[_batchId];
+        Batch memory b = batches[_batchId];
         // Kiểm tra xem lô hàng có bị thu hồi hoặc ngắt hoạt động không
         if (
-        	!b.isActive ||
-        	b.status == Status.Recalled
+            !b.isActive ||
+            b.status == Status.Recalled
         ) {
-        	return (
+            return (
                 false,
-            	string(abi.encodePacked("Lo hang da bi thu hoi. Ly do: ",recallReasons[_batchId] ) ) );
+                string(abi.encodePacked("Lo hang da bi thu hoi. Ly do: ",recallReasons[_batchId] ) ) );
         }
-        // Duyệt qua lịch sử vận chuyển để tìm vi phạm nhiệt độ 
+        // Duyệt qua lịch sử vận chuyển để tìm vi phạm nhiệt độ
         TransportRecord[] memory records = transportHistory[_batchId];
-    	for (uint256 i = 0; i < records.length; i++) {
+        for (uint256 i = 0; i < records.length; i++) {
             // Ngưỡng an toàn: 0°C → 10°C
             if (
-          	    records[i].temperature < 0 ||
-            	records[i].temperature > 10
+                records[i].temperature < 0 ||
+                records[i].temperature > 10
             ) {
                 return (false, "San pham khong an toan do vi pham nhiet do bao quan trong qua trinh van chuyen ");
             }
@@ -352,3 +354,6 @@ contract FoodTrace is Ownable, AccessControl {
         return (true, "San pham an toan" );
     }
 }
+
+
+
