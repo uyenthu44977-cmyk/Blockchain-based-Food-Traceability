@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/food-traceability/static/css/main.8c82cc5c.css",
+    "main.js": "/food-traceability/static/js/main.e823e1e5.js",
+    "static/js/453.20359781.chunk.js": "/food-traceability/static/js/453.20359781.chunk.js",
+    "static/media/logo.svg": "/food-traceability/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/food-traceability/index.html",
+    "main.8c82cc5c.css.map": "/food-traceability/static/css/main.8c82cc5c.css.map",
+    "main.e823e1e5.js.map": "/food-traceability/static/js/main.e823e1e5.js.map",
+    "453.20359781.chunk.js.map": "/food-traceability/static/js/453.20359781.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8c82cc5c.css",
+    "static/js/main.e823e1e5.js"
+  ]
+}
