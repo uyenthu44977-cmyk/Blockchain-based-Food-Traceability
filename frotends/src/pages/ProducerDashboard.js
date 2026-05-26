@@ -1,76 +1,104 @@
 import { useState } from "react";
 
+
 import { QRCodeCanvas } from "qrcode.react";
 
+
 export default function ProducerDashboard() {
+
 
   const [productName, setProductName] =
     useState("");
 
+
   const [origin, setOrigin] =
     useState("");
+
 
   const [description, setDescription] =
     useState("");
 
+
   const [image, setImage] =
     useState(null);
+
 
   const [status, setStatus] =
     useState("Created");
 
+
   const [location, setLocation] =
     useState("");
+
 
   const [note, setNote] =
     useState("");
 
+
   const [selectedBatch, setSelectedBatch] =
     useState("");
+
 
   const [batches, setBatches] =
     useState([]);
 
+
   // CREATE BATCH
   const handleCreateBatch = () => {
+
 
     const newBatch = {
       id: batches.length + 1,
 
+
       productName,
+
 
       origin,
 
+
       description,
+
 
       image,
 
+
       status: "Created",
+
 
       history: [],
     };
 
+
     setBatches([...batches, newBatch]);
+
 
     setProductName("");
     setOrigin("");
     setDescription("");
   };
 
+
   // UPDATE STATUS
   const handleUpdateStatus = () => {
 
+
     const updated = batches.map((batch) => {
 
+
       if (batch.id === Number(selectedBatch)) {
+
 
         return {
           ...batch,
 
+
           status,
+
 
           history: [
             ...batch.history,
+
 
             {
               status,
@@ -81,26 +109,34 @@ export default function ProducerDashboard() {
         };
       }
 
+
       return batch;
     });
 
+
     setBatches(updated);
+
 
     setLocation("");
     setNote("");
   };
+
 
   return (
     <div
   style={{
     padding: "40px",
 
+
     display: "flex",
     flexDirection: "column",
 
+
     alignItems: "center",
 
+
     minHeight: "100vh",
+
 
     textAlign: "center",
   }}
@@ -111,20 +147,24 @@ export default function ProducerDashboard() {
     fontSize: "70px",
     fontWeight: "700",
 
+
     background:
       "linear-gradient(90deg, #00d2ff, #7c4dff, #ff4fd8, #00d2ff)",
 
+
     backgroundSize: "300%",
+
 
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
+
 
     animation: "gradientMove 5s ease infinite",
   }}
 >
   Producer Dashboard
 </h1>
-    <hr /> 
+    <hr />
     <br />
     <h2
   style={{
@@ -137,6 +177,7 @@ export default function ProducerDashboard() {
 </h2>
 <br />
 
+
       <input
   type="text"
   placeholder="Tên sản phẩm"
@@ -148,28 +189,39 @@ export default function ProducerDashboard() {
     width: "400px",
     padding: "10px",
 
+
     borderRadius: "14px",
+
 
     border: "1px solid #7c4dff",
 
+
     background: "rgba(255,255,255,0.06)",
+
 
     color: "#b794f4",
 
+
     fontFamily: "'Nunito', sans-serif",
+
 
     fontSize: "15px",
 
+
     outline: "none",
 
+
     backdropFilter: "blur(8px)",
+
 
     boxShadow:
       "0 0 12px rgba(124,77,255,0.2)",
   }}
 />
 
+
       <br />
+
 
       <input
   type="text"
@@ -194,7 +246,9 @@ export default function ProducerDashboard() {
   }}
 />
 
+
       <br />
+
 
       <textarea
   placeholder="Mô tả sản phẩm"
@@ -206,32 +260,45 @@ export default function ProducerDashboard() {
     width: "400px",
     height: "100px",
 
+
     padding: "10px",
+
 
     borderRadius: "14px",
 
+
     border: "1px solid #7c4dff",
+
 
     background: "rgba(255,255,255,0.06)",
 
+
     color: "#b794f4",
+
 
     fontFamily: "'Nunito', sans-serif",
 
+
     fontSize: "15px",
+
 
     outline: "none",
 
+
     resize: "none",
 
+
     backdropFilter: "blur(8px)",
+
 
     boxShadow:
       "0 0 12px rgba(124,77,255,0.2)",
   }}
 />
 
+
       <br />
+
 
       <input
         type="file"
@@ -245,23 +312,30 @@ export default function ProducerDashboard() {
       />
 <br />
 
+
      <button
-  onClick={handleCreateBatch}
+  onClick={handleUdateStatus}
   style={{
     fontFamily: "'Nunito', sans-serif",
     fontSize: "15px",
 
+
     padding: "5px 15px",
+
 
     borderRadius: "18px",
     border: "none",
 
+
     background:
       "linear-gradient(to right, #00d2ff, #7c4dff)",
 
+
     color: "white",
 
+
     cursor: "pointer",
+
 
     boxShadow:
       "0 0 15px rgba(124,77,255,0.4)",
@@ -270,10 +344,12 @@ export default function ProducerDashboard() {
   Tạo Batch
 </button>
 
+
       <br />
       <br />
       <hr />
        <br />
+
 
  <h2
   style={{
@@ -294,24 +370,34 @@ export default function ProducerDashboard() {
     width: "400px",
     padding: "15px",
 
+
     borderRadius: "14px",
+
 
     border: "1px solid #425ed9",
 
+
     background: "rgba(255,255,255,0.06)",
+
 
     color: "#e0dae9",
 
+
     fontFamily: "'Nunito', sans-serif",
+
 
     fontSize: "15px",
 
+
     outline: "none",
+
 
     backdropFilter: "blur(8px)",
 
+
     boxShadow:
       "0 0 12px rgba(124,77,255,0.2)",
+
 
     cursor: "pointer",
   }}
@@ -319,6 +405,7 @@ export default function ProducerDashboard() {
   <option value="">
     Chọn Batch
   </option>
+
 
   {batches.map((batch) => (
     <option
@@ -358,6 +445,7 @@ export default function ProducerDashboard() {
 </select>
       <br />
 
+
       <input
   type="text"
   placeholder="Địa điểm"
@@ -368,31 +456,42 @@ export default function ProducerDashboard() {
   style={{
     width: "400px",
 
+
     padding: "14px",
+
 
     borderRadius: "14px",
 
+
     border: "1px solid #4d5fff",
+
 
     background:
       "rgba(255,255,255,0.06)",
 
+
     color: "#b794f4",
+
 
     fontFamily:
       "'Nunito', sans-serif",
 
+
     fontSize: "15px",
+
 
     outline: "none",
 
+
     backdropFilter: "blur(8px)",
+
 
     boxShadow:
       "0 0 12px rgba(124,77,255,0.2)",
   }}
 />
       <br />
+
 
       <textarea
   placeholder="Ghi chú"
@@ -403,29 +502,41 @@ export default function ProducerDashboard() {
   style={{
     width: "400px",
 
+
     height: "100px",
+
 
     padding: "14px",
 
+
     borderRadius: "14px",
 
+
     border: "1px solid #4d77ff",
+
 
     background:
       "rgba(255,255,255,0.06)",
 
+
     color: "#b794f4",
+
 
     fontFamily:
       "'Nunito', sans-serif",
 
+
     fontSize: "15px",
+
 
     outline: "none",
 
+
     resize: "none",
 
+
     backdropFilter: "blur(8px)",
+
 
     boxShadow:
       "0 0 12px rgba(124,77,255,0.2)",
@@ -433,23 +544,30 @@ export default function ProducerDashboard() {
 />
       <br />
 
+
          <button
   onClick={handleCreateBatch}
   style={{
     fontFamily: "'Nunito', sans-serif",
     fontSize: "15px",
 
+
     padding: "5px 15px",
+
 
     borderRadius: "18px",
     border: "none",
 
+
     background:
       "linear-gradient(to right, #00d2ff, #7c4dff)",
 
+
     color: "white",
 
+
     cursor: "pointer",
+
 
     boxShadow:
       "0 0 15px rgba(124,77,255,0.4)",
@@ -458,60 +576,79 @@ export default function ProducerDashboard() {
   Cập nhật
 </button>
 
+
       <hr />
       <br />
       <br />
 
+
       <h2>Danh sách Batch</h2>
       <br />
 
+
       {batches.map((batch) => (
+
 
         <div
           key={batch.id}
           style={{
   width: "600px",
 
+
   background: "rgba(255,255,255,0.08)",
+
 
   border: "1px solid rgba(255,255,255,0.12)",
 
+
   borderRadius: "20px",
+
 
   padding: "30px",
 
+
   marginBottom: "40px",
 
+
   backdropFilter: "blur(12px)",
+
 
   boxShadow:
     "0 8px 30px rgba(0,0,0,0.25)",
 
+
   textAlign: "left",
+
 
   fontFamily: "'Nunito', sans-serif",
 }}
         >
 
+
           <h3>
             {batch.productName}
           </h3>
+
 
           <p>
   <b>Origin:</b> {batch.origin}
 </p>
 
+
 <p>
   <b>Status:</b> {batch.status}
 </p>
+
 
 <p>
   <b>Batch ID:</b> #{batch.id}
 </p>
 
+
           <p>
             {batch.description}
           </p>
+
 
           {batch.image && (
             <img
@@ -521,8 +658,10 @@ export default function ProducerDashboard() {
             />
           )}
 
+
           <br />
           <br />
+
 
           <div
   style={{
@@ -538,12 +677,16 @@ export default function ProducerDashboard() {
   />
 </div>
 
+
           <hr />
+
 
           <h4>Lịch sử vận chuyển</h4>
 
+
           {batch.history.map(
             (item, index) => (
+
 
               <div
                 key={index}
@@ -551,19 +694,25 @@ export default function ProducerDashboard() {
   background:
     "rgba(255,255,255,0.06)",
 
+
   border:
     "1px solid rgba(255,255,255,0.08)",
 
+
   borderRadius: "14px",
+
 
   padding: "15px",
 
+
   marginBottom: "15px",
+
 
   boxShadow:
     "0 4px 10px rgba(0,0,0,0.15)",
 }}
               >
+
 
                 <p>
                   <b>
@@ -571,21 +720,27 @@ export default function ProducerDashboard() {
                   </b>
                 </p>
 
+
                 <p>
                   📍 {item.location}
                 </p>
+
 
                 <p>
                   📝 {item.note}
                 </p>
 
+
               </div>
             )
           )}
 
+
         </div>
       ))}
+
 
     </div>
   );
 }
+
