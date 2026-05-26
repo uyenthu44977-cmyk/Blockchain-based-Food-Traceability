@@ -314,7 +314,7 @@ export default function ProducerDashboard() {
 
 
      <button
-  onClick={handleUdateStatus}
+  onClick={handleUpdateStatus}
   style={{
     fontFamily: "'Nunito', sans-serif",
     fontSize: "15px",
