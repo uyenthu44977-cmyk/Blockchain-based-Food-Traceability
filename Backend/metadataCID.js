@@ -29,6 +29,15 @@ const demoData = [
       "QmbktkAg9bRhQxoa56EgkAedAkGbz1HYaQxn4MCVU5v7EL",
   },
 
+  {
+  productName: "Longan",
+
+  origin: "Hưng Yên",
+
+  metadataCID:
+    "Qme1smiD78ERFoKqiVeyodb9HzLkBYSsiAxDd7eb9VpiFD"
+}
+
 ];
 
 // Export dữ liệu

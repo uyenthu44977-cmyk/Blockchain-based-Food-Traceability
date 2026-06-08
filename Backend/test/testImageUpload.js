@@ -1,20 +1,16 @@
-// Import hàm uploadImageToIPFS
-const {
-  uploadImageToIPFS,
-} = require("../services/pinataService");
+const { uploadImageToIPFS } =
+  require("../services/pinataService");
 
-// Hàm test upload ảnh
 async function testImageUpload() {
 
-  // Upload ảnh trong thư mục uploads
   const result =
     await uploadImageToIPFS(
-      "./uploads/pork.jpg"
+      "./uploads/logan_certificate.webp"
     );
 
-  // In kết quả ra terminal
+  // In CID và URL ra màn hình
   console.log(result);
+
 }
 
-// Chạy hàm test
 testImageUpload();
