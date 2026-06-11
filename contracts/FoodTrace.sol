@@ -43,6 +43,9 @@ contract FoodTrace is Ownable, AccessControl {
         uint256 deliveredAt;
         bool isActive;
         bytes32 productHash;
+        bool certified;
+        address certifiedBy;
+        uint256 certifiedAt;
     }
     // 3. THÔNG TIN TRANG TRẠI
     struct Farm {
@@ -169,11 +172,16 @@ contract FoodTrace is Ownable, AccessControl {
             packedAt: 0,
             deliveredAt: 0,
             isActive: true,
-            productHash: pHash
+            productHash: pHash,
+            certified: false,
+            certifiedBy: address(0),
+            certifiedAt: 0
         });
         // Lưu batch vào danh sách của farmer
         farmerBatches[msg.sender].push(batchCounter);
-        emit BatchCreated(batchCounter, _name, msg.sender);
+        history[batchCounter].push(
+            StatusLog(Status.Created, block.timestamp, msg.sender ));
+        emit BatchCreated(batchCounter, _batchCode, msg.sender);
         }
     // Thời gian đóng gói
     function markPacked(uint256 _batchId)
@@ -188,14 +196,27 @@ contract FoodTrace is Ownable, AccessControl {
         block.timestamp;
     }
     //Thanh tra
-    function certifyBatch(uint256 _batchId, string memory _certHash) external {
-        require(hasRole(INSPECTOR_ROLE, msg.sender), "Chi than tra moi duoc chung nhan");
+    function certifyBatch(uint256 _batchId)
+    external
+    {
         require(
-            _batchId > 0 &&
-            _batchId <= batchCounter,
-            "Batch khong ton tai" 
-            );
-        batches[_batchId].certHash = _certHash;      
+        _batchId > 0 &&
+        _batchId <= batchCounter,
+        "Batch khong ton tai"
+        );
+        
+        require(
+        hasRole(INSPECTOR_ROLE, msg.sender),
+        "Chi thanh tra moi duoc chung nhan"
+        );
+
+        require(
+        !batches[_batchId].certified,
+        "Da duoc chung nhan"
+        );
+        batches[_batchId].certified = true;
+        batches[_batchId].certifiedBy = msg.sender;
+        batches[_batchId].certifiedAt = block.timestamp;
     }
     // Tạo QR code cho sản phẩm
      function getQRCode(uint256 _batchId) public view returns (bytes32) {
@@ -213,7 +234,7 @@ contract FoodTrace is Ownable, AccessControl {
         view
         returns (
             bool isReal,
-            string memory productName,
+            string memory batchCode,
             string memory origin,
             string memory certHash,
             Status status,
@@ -235,7 +256,7 @@ contract FoodTrace is Ownable, AccessControl {
         }
         return (
             true,                          
-            b.name,
+            b.batchCode,
             b.origin,
             b.certHash,
             b.status,
@@ -258,6 +279,7 @@ contract FoodTrace is Ownable, AccessControl {
         } else if (current == Status.Harvested) {
             require(_newStatus == Status.Processing, "Phai chuyen sang Processing truoc");
         } else if (current == Status.Processing) {
+            require( batches[_batchId].certified,"Batch chua duoc thanh tra duyet" );
             require(_newStatus == Status.Transporting, "Phai chuyen sang Transporting truoc");
         } else if (current == Status.Transporting) {
             require(_newStatus == Status.Delivered, "Phai chuyen sang Delivered truoc");
@@ -286,6 +308,9 @@ contract FoodTrace is Ownable, AccessControl {
 batches[_batchId].status == Status.Processing ||
             batches[_batchId].status == Status.Transporting,
             "Trang thai khong hop le"
+        );
+        require(
+        batches[_batchId].certified,"Batch chua duoc thanh tra duyet"
         );
         //Bảo mật
         require(hasRole(FARMER_ROLE, msg.sender),"Not farmer role");
@@ -324,8 +349,7 @@ batches[_batchId].status == Status.Processing ||
         );
     }
 }
-        
-    }  
+         
     // Xem danh sách
     function getHistory(uint256 _batchId)
         external
@@ -416,7 +440,7 @@ batches[_batchId].status == Status.Processing ||
     {
         require(_batchId > 0 &&
                 _batchId <= batchCounter,
-                "Batch does not exist"
+                "Batch khong ton tai"
                 );
         Batch memory b = batches[_batchId];
         // Kiểm tra xem lô hàng có bị thu hồi hoặc ngắt hoạt động không
