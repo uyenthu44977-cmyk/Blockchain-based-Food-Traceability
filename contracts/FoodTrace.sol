@@ -9,30 +9,38 @@ contract FoodTrace is Ownable, AccessControl {
 }
     bytes32 public constant FARMER_ROLE = keccak256("FARMER_ROLE");
     bytes32 public constant INSPECTOR_ROLE = keccak256("INSPECTOR_ROLE");
+    uint256 public constant MAX_TRANSPORT_DAYS = 10;
     // 1. CÁC TRẠNG THÁI CỦA SẢN PHẨM
     enum Status {
-        Created,      
-        Harvested,    
-        Processing,  
-        Transporting,
-        Delivered,    
-        Recalled      
+        Created,         // Tạo lô hàng     
+        Harvested,       // Thu hoạch
+        Processing,      // Sơ chế + đóng gói + dán QR
+        Transporting,    // Vận chuyển nội địa
+        Delivered,       // Bàn giao doanh nghiệp xuất khẩu
+        Recalled         // Thu hồi lô hàng
     }
-    enum ProductType {
-    Thit,
-    RauCuQua,
-    Hat
+    enum DurianType {
+    Ri6,
+    Dona,
+    MusangKing
 }
     // 2. THÔNG TIN LÔ HÀNG
     struct Batch {
         uint256 id;
-        string name;          
-        string origin;        
+        string batchCode;
+        DurianType durianType;
+        string origin;
+        string plantingAreaCode;
+        string packingHouseCode;
+        string exportMarket;
         string certHash;
-        ProductType productType;      
+        string certType;
+        uint256 quantity;
         Status status;
-        address farmer;        
+        address farmer;
         uint256 harvestedAt;
+        uint256 packedAt;
+        uint256 deliveredAt;
         bool isActive;
         bytes32 productHash;
     }
@@ -46,8 +54,6 @@ contract FoodTrace is Ownable, AccessControl {
     mapping(uint256 => Batch) public batches; 
     // Danh sách batch của từng farmer
     mapping(address => uint256[]) public farmerBatches;       
-    mapping(bytes32 => bool) public qrUsed;
-    mapping(uint256 => bool) public batchSold;
     address[] public farmList;
     uint256 public batchCounter;
     // LỊCH SỬ TRẠNG THÁI
@@ -71,8 +77,7 @@ contract FoodTrace is Ownable, AccessControl {
         public transportHistory;
     // SỰ KIỆN
     event FarmAdded(address indexed farmer, string name);
-    event BatchCreated(uint256 batchId, string name, address farmer);
-    event ProductSold(uint256 batchId, bytes32 qrCode, address buyer);
+    event BatchCreated(uint256 batchId, string batchCode, address farmer);
     // Event cập nhật vận chuyển
     event TransportUpdated(
         uint256 batchId,
@@ -80,7 +85,6 @@ contract FoodTrace is Ownable, AccessControl {
         int temperature,
         Status status
     );
-
 
     // Event cảnh báo nhiệt độ
     event TemperatureViolation(
@@ -93,7 +97,7 @@ contract FoodTrace is Ownable, AccessControl {
         require(!farms[_farmer].isVerified, "Trang trai da ton tai");
         farms[_farmer] = Farm({
             name: _name,
-isVerified: true
+            isVerified: true
         });
         farmList.push(_farmer);
        _grantRole(FARMER_ROLE, _farmer);
@@ -120,31 +124,68 @@ isVerified: true
     }
    // Tạo lô hàng mới
     function createBatch(
-        string memory _name,
+        string memory _batchCode,
+        DurianType _durianType,
         string memory _origin,
+        string memory _plantingAreaCode,
+        string memory _packingHouseCode,
+        string memory _exportMarket,
         string memory _certHash,
-        ProductType _productType
+        string memory _certType,
+        uint256 _quantity
     ) external {
         require(hasRole(FARMER_ROLE, msg.sender), "Not farmer role");
+        require(_quantity > 0, "Invalid quantity");
+    require(
+        bytes(_plantingAreaCode).length > 0,
+        "Planting area code required"
+    );
+    require(
+        bytes(_packingHouseCode).length > 0,
+        "Packing house code required"
+    );
+    require(
+        bytes(_exportMarket).length > 0,
+        "Export market required"
+    );
         batchCounter++;
         bytes32 pHash = keccak256(
             abi.encodePacked(batchCounter, msg.sender, block.timestamp)
         );
         batches[batchCounter] = Batch({
             id: batchCounter,
-            name: _name,
+            batchCode: _batchCode,
+            durianType: _durianType,
             origin: _origin,
+            plantingAreaCode: _plantingAreaCode,
+            packingHouseCode: _packingHouseCode,
+            exportMarket: _exportMarket,
             certHash: _certHash,
-            productType: _productType,
+            certType: _certType,
+            quantity: _quantity,
             status: Status.Created,
             farmer: msg.sender,
             harvestedAt: block.timestamp,
+            packedAt: 0,
+            deliveredAt: 0,
             isActive: true,
             productHash: pHash
         });
         // Lưu batch vào danh sách của farmer
         farmerBatches[msg.sender].push(batchCounter);
         emit BatchCreated(batchCounter, _name, msg.sender);
+        }
+    // Thời gian đóng gói
+    function markPacked(uint256 _batchId)
+    external
+    {
+    require(
+        batches[_batchId].farmer == msg.sender,
+        "Not batch owner"
+    );
+
+    batches[_batchId].packedAt =
+        block.timestamp;
     }
     //Thanh tra
     function certifyBatch(uint256 _batchId, string memory _certHash) external {
@@ -165,34 +206,7 @@ isVerified: true
     );    
         return batches[_batchId].productHash;
     }
-    function useQRCode( bytes32 _qrHash) internal {
-        require(!qrUsed[_qrHash], "QR da su dung");
-        qrUsed[_qrHash] = true;
-    }
-    // Bán sản phẩm
-    function sellProduct(
-        uint256 _batchId,
-        bytes32 _qrHash,
-        address _buyer
-    ) external {
-        require(
-                _batchId > 0 &&
-                _batchId <= batchCounter,
-                "Batch khong ton tai"
-    );
-        require(
-            batches[_batchId].status == Status.Delivered,
-            "Lo hang chua hoan thanh quy trinh"
-    );
-        require(batches[_batchId].farmer == msg.sender, "Khong co quyen ban");
-        require(batches[_batchId].isActive, "San pham da bi thu hoi");
-require(_qrHash == batches[_batchId].productHash, "Ma QR khong hop le");
-        require(!qrUsed[_qrHash], "QR da duoc su dung");
-        require(!batchSold[_batchId], "Lo hang da ban roi");
-        useQRCode(_qrHash);
-        batchSold[_batchId] = true;
-        emit ProductSold(_batchId, _qrHash, _buyer);
-    }
+    
     // Người dùng kiểm tra sản phẩm
     function checkProduct(uint256 _batchId, bytes32 _qrHash)
         external
@@ -251,6 +265,10 @@ require(_qrHash == batches[_batchId].productHash, "Ma QR khong hop le");
             revert("Khong the cap nhat trang thai nay");
         }
         batches[_batchId].status = _newStatus;
+        if (_newStatus == Status.Delivered) {
+            batches[_batchId].deliveredAt =
+            block.timestamp;
+        }
         history[_batchId].push(
             StatusLog(_newStatus, block.timestamp, msg.sender)
         );
@@ -298,22 +316,15 @@ batches[_batchId].status == Status.Processing ||
     }
     // Kiểm tra vi phạm nhiệt độ
     function checkTemperatureViolation(uint256 _batchId, int _temperature) internal {
-        ProductType product = batches[_batchId].productType;
-        // Kiểm tra thịt
-        if (product == ProductType.Thit) {
-            if (_temperature < 0 || _temperature > 4)
-            {emit TemperatureViolation(_batchId, _temperature, "Nhiet do thit khong an toan");}
-        }
-        // Kiểm tra rau củ quả
-        else if (product == ProductType.RauCuQua) {
-            if (_temperature < 0 || _temperature > 15) {
-            emit TemperatureViolation( _batchId, _temperature, "Nhiet do rau cu qua khong an toan");}
-        }
-        // Kiểm tra các loại hạt
-        else if (product == ProductType.Hat) {
-            if (_temperature < 10 || _temperature > 20) {
-            emit TemperatureViolation(_batchId, _temperature, "Nhiet do hat khong an toan"); }
-        }
+       if (_temperature < 12 || _temperature > 15) {
+        emit TemperatureViolation(
+            _batchId,
+            _temperature,
+            "Unsafe storage temperature for durians"
+        );
+    }
+}
+        
     }  
     // Xem danh sách
     function getHistory(uint256 _batchId)
@@ -332,7 +343,7 @@ batches[_batchId].status == Status.Processing ||
     // Lưu lý do thu hồi
     mapping(uint256 => string) public recallReasons;
     // Event thu hồi lô hàng
-event BatchRecalled(
+    event BatchRecalled(
         uint256 indexed batchId,
         string reason
     );
@@ -350,7 +361,7 @@ event BatchRecalled(
             batches[_batchId].farmer == msg.sender ||
             hasRole(DEFAULT_ADMIN_ROLE, msg.sender) ||
             hasRole(INSPECTOR_ROLE, msg.sender),
-            "Khong co quyen thu hoi"
+            "Unauthorized recall"
         );
         // Kiểm tra lô hàng còn hoạt động
         require(batches[_batchId].isActive, "Lo hang da o trang thai khong hoat dong");
@@ -405,7 +416,7 @@ event BatchRecalled(
     {
         require(_batchId > 0 &&
                 _batchId <= batchCounter,
-                "Batch khong ton tai"
+                "Batch does not exist"
                 );
         Batch memory b = batches[_batchId];
         // Kiểm tra xem lô hàng có bị thu hồi hoặc ngắt hoạt động không
@@ -419,29 +430,30 @@ event BatchRecalled(
         }
         // Kiểm tra toàn bộ lịch sử vận chuyển
         TransportRecord[] memory records = transportHistory[_batchId];
-        ProductType product = batches[_batchId].productType;
-        
         for (uint256 i = 0; i < records.length; i++) {
-            // Kiểm tra thịt (Ngưỡng an toàn: 0°C -> 4°C)
-if (product == ProductType.Thit) {
-                if (records[i].temperature < 0 || records[i].temperature > 4) {
-                    return (false, "San pham khong an toan do vi pham nhiet do bao quan thit");
-                }
-            }
-            // Kiểm tra rau củ quả (Ngưỡng an toàn: 0°C -> 15°C)
-             else if (product == ProductType.RauCuQua) {
-                if (records[i].temperature < 0 || records[i].temperature > 15) {
-                    return (false, "San pham khong an toan do vi pham nhiet do bao quan rau cu qua");
-                }
-            }
-            // Kiểm tra các loại hạt (Ngưỡng an toàn: 10°C -> 20°C)
-             else if (product == ProductType.Hat) {
-                if (records[i].temperature < 10 || records[i].temperature > 20) {
-                    return (false, "San pham khong an toan do vi pham nhiet do bao quan hat");
-                }
-            }
-        }
-        return (true, "San pham an toan");
+        if (
+        records[i].temperature < 12 ||
+        records[i].temperature > 15
+        ) {
+        return (
+            false,
+            "San pham khong an toan do vi pham nhiet do bao quan sau rieng"
+        );
+    }
+}
+    if (
+    b.deliveredAt > 0 &&
+    b.deliveredAt >
+    b.harvestedAt +
+    MAX_TRANSPORT_DAYS * 1 days
+)
+{
+    return (
+        false,
+        "Transport duration exceeded limit"
+    );
+}   
+        return (true, "Safe product");
     }
 
         // Lấy danh sách ID batch của farmer
