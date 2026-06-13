@@ -3,28 +3,34 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 contract FoodTrace is Ownable, AccessControl {
-    constructor() Ownable(msg.sender) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    _grantRole(INSPECTOR_ROLE, msg.sender);
-}
     bytes32 public constant FARMER_ROLE = keccak256("FARMER_ROLE");
     bytes32 public constant INSPECTOR_ROLE = keccak256("INSPECTOR_ROLE");
+    constructor() Ownable(msg.sender) {
+    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _grantRole(INSPECTOR_ROLE, msg.sender);
+    // Khởi tạo ngưỡng nhiệt cho từng loại sầu riêng
+    tempThresholds[DurianType.Ri6] = TempThreshold(13, 15);
+    tempThresholds[DurianType.Monthong] = TempThreshold(12, 14);
+    tempThresholds[DurianType.MusangKing] = TempThreshold(10, 12);
+}
+    
     uint256 public constant MAX_TRANSPORT_DAYS = 10;
-    // 1. CÁC TRẠNG THÁI CỦA SẢN PHẨM
+// 1. CÁC TRẠNG THÁI CỦA SẢN PHẨM
     enum Status {
         Created,         // Tạo lô hàng     
         Harvested,       // Thu hoạch
-        Processing,      // Sơ chế + đóng gói + dán QR
+        Processing,      // Sơ chế
+        Packed,           // Đóng gói + dán QR
         Transporting,    // Vận chuyển nội địa
         Delivered,       // Bàn giao doanh nghiệp xuất khẩu
         Recalled         // Thu hồi lô hàng
     }
     enum DurianType {
     Ri6,
-    Dona,
+    Monthong,
     MusangKing
 }
-    // 2. THÔNG TIN LÔ HÀNG
+// 2. CẤU TRÚC DỮ LIỆU
     struct Batch {
         uint256 id;
         string batchCode;
@@ -46,27 +52,17 @@ contract FoodTrace is Ownable, AccessControl {
         bool certified;
         address certifiedBy;
         uint256 certifiedAt;
+        bool hasTemperatureViolation; 
     }
-    // 3. THÔNG TIN TRANG TRẠI
+
     struct Farm {
         string name;
         bool isVerified;
     }
-    // 4. LƯU TRỮ DỮ LIỆU
-    mapping(address => Farm) public farms;          
-    mapping(uint256 => Batch) public batches; 
-    // Danh sách batch của từng farmer
-    mapping(address => uint256[]) public farmerBatches;       
-    address[] public farmList;
-    uint256 public batchCounter;
-    // LỊCH SỬ TRẠNG THÁI
-     struct StatusLog {
+    struct StatusLog {
         Status status;
         uint256 timestamp;
-        address actor;
-    }
-    mapping(uint256 => StatusLog[]) public history;
-    // Lưu thông tin vận chuyển
+        address actor;}
     struct TransportRecord {
         Status status; // trạng thái hiện tại
         string location; // địa điểm
@@ -74,30 +70,46 @@ contract FoodTrace is Ownable, AccessControl {
         uint256 timestamp; // thời gian cập nhật
         address operator; // người cập nhật
     }
-
-    // Lưu lịch sử vận chuyển của từng lô hàng
-    mapping(uint256 => TransportRecord[])
-        public transportHistory;
-    // SỰ KIỆN
+    struct TempThreshold {
+        int8 minTemp;
+        int8 maxTemp;
+    }
+// 3. BIẾN LƯU TRỮ
+    mapping(address => Farm) public farms;          
+    mapping(uint256 => Batch) public batches; 
+    mapping(address => uint256[]) public farmerBatches;       
+    mapping(uint256 => StatusLog[]) public history;
+    mapping(uint256 => TransportRecord[]) public transportHistory;
+    mapping(uint256 => string) public recallReasons;
+    mapping(DurianType => TempThreshold) public tempThresholds;
+    address[] public farmList;
+    uint256 public batchCounter;
+    modifier batchExists(uint256 _batchId) {
+    require(_batchId > 0 && _batchId <= batchCounter, "Batch does not exist");
+    _;
+    }
+// 4. EVENTS
     event FarmAdded(address indexed farmer, string name);
     event BatchCreated(uint256 batchId, string batchCode, address farmer);
-    // Event cập nhật vận chuyển
+    event BatchCertified(uint256 batchId, address inspector);
+    event BatchPacked(uint256 batchId);
     event TransportUpdated(
         uint256 batchId,
         string location,
         int temperature,
         Status status
     );
-
-    // Event cảnh báo nhiệt độ
+    event StatusUpdated(uint256 batchId, Status newStatus);
     event TemperatureViolation(
         uint256 batchId,
         int temperature,
         string warning
     );
-    // Chủ hệ thống thêm trang trại
+    event BatchRecalled(uint256 indexed batchId, string reason);
+    event TempThresholdUpdated(DurianType indexed durianType, int8 minTemp, int8 maxTemp);
+ // 5. QUẢN LÍ PHÂN QUYỀN   
     function addFarm(address _farmer, string memory _name) external onlyOwner {
-        require(!farms[_farmer].isVerified, "Trang trai da ton tai");
+        require(!farms[_farmer].isVerified, "Farm already exists");
         farms[_farmer] = Farm({
             name: _name,
             isVerified: true
@@ -125,7 +137,25 @@ contract FoodTrace is Ownable, AccessControl {
     {
     _revokeRole(INSPECTOR_ROLE, _inspector);
     }
-   // Tạo lô hàng mới
+    // Kiểm tra role của ví
+    function getMyRole(address _user)
+        external
+        view
+        returns (string memory)
+    {
+        if (hasRole(DEFAULT_ADMIN_ROLE, _user)) {
+            return "ADMIN";
+        }
+        if (hasRole(INSPECTOR_ROLE, _user)) {
+            return "INSPECTOR";
+        }
+        if (hasRole(FARMER_ROLE, _user)) {
+            return "FARMER";
+        }
+        return "CONSUMER";
+    }
+// 6. QUẢN LÍ LÔ HÀNG
+    //Tạo lô hàng
     function createBatch(
         string memory _batchCode,
         DurianType _durianType,
@@ -139,6 +169,22 @@ contract FoodTrace is Ownable, AccessControl {
     ) external {
         require(hasRole(FARMER_ROLE, msg.sender), "Not farmer role");
         require(_quantity > 0, "Invalid quantity");
+    require(
+        bytes(_batchCode).length > 0,
+        "Batch code required"
+    );
+    require(
+        bytes(_certType).length > 0,
+        "Certificate type required"
+    );
+    require(
+        bytes(_certHash).length > 0,
+        "Certificate file required"
+    );
+    require(
+        bytes(_origin).length > 0,
+        "Origin required"
+    );
     require(
         bytes(_plantingAreaCode).length > 0,
         "Planting area code required"
@@ -168,14 +214,15 @@ contract FoodTrace is Ownable, AccessControl {
             quantity: _quantity,
             status: Status.Created,
             farmer: msg.sender,
-            harvestedAt: block.timestamp,
+            harvestedAt: 0,
             packedAt: 0,
             deliveredAt: 0,
             isActive: true,
             productHash: pHash,
             certified: false,
             certifiedBy: address(0),
-            certifiedAt: 0
+            certifiedAt: 0,
+            hasTemperatureViolation: false
         });
         // Lưu batch vào danh sách của farmer
         farmerBatches[msg.sender].push(batchCounter);
@@ -183,203 +230,108 @@ contract FoodTrace is Ownable, AccessControl {
             StatusLog(Status.Created, block.timestamp, msg.sender ));
         emit BatchCreated(batchCounter, _batchCode, msg.sender);
         }
-    // Thời gian đóng gói
-    function markPacked(uint256 _batchId)
-    external
-    {
+    // Đóng gói
+    function markPacked(uint256 _batchId) external batchExists(_batchId) {
     require(
         batches[_batchId].farmer == msg.sender,
         "Not batch owner"
     );
-
-    batches[_batchId].packedAt =
-        block.timestamp;
+    require(
+    hasRole(FARMER_ROLE, msg.sender),
+    "Not farmer role"
+    );
+    require(
+    batches[_batchId].packedAt == 0,
+    "Already packed"
+    );
+    require(
+    batches[_batchId].status ==
+    Status.Processing,
+    "Batch not in packet stage"
+    );
+    batches[_batchId].packedAt = block.timestamp;
+    batches[_batchId].status = Status.Packed;
+    history[_batchId].push(
+        StatusLog(
+            Status.Packed,
+            block.timestamp,
+            msg.sender
+        )
+    );
+    emit BatchPacked(_batchId);
     }
-    //Thanh tra
-    function certifyBatch(uint256 _batchId)
-    external
-    {
+    //Chứng nhận lô hàng
+    function certifyBatch(uint256 _batchId) external batchExists(_batchId) {
         require(
-        _batchId > 0 &&
-        _batchId <= batchCounter,
-        "Batch khong ton tai"
+        batches[_batchId].status == Status.Packed,
+        "Batch not in processing stage"
         );
-        
+        require(
+        batches[_batchId].packedAt > 0,
+        "Batch not packed yet"
+        );
+        require(
+        batches[_batchId].isActive,
+        "Batch inactive"
+        );
         require(
         hasRole(INSPECTOR_ROLE, msg.sender),
-        "Chi thanh tra moi duoc chung nhan"
+        "Inspector only"
         );
 
         require(
         !batches[_batchId].certified,
-        "Da duoc chung nhan"
+        "Already certified"
         );
         batches[_batchId].certified = true;
         batches[_batchId].certifiedBy = msg.sender;
         batches[_batchId].certifiedAt = block.timestamp;
+    emit BatchCertified(
+    _batchId,
+    msg.sender
+    );
     }
-    // Tạo QR code cho sản phẩm
-     function getQRCode(uint256 _batchId) public view returns (bytes32) {
-        require(
-        _batchId > 0 &&
-        _batchId <= batchCounter,
-        "Batch khong ton tai"
-    );    
-        return batches[_batchId].productHash;
-    }
-    
-    // Người dùng kiểm tra sản phẩm
-    function checkProduct(uint256 _batchId, bytes32 _qrHash)
-        external
-        view
-        returns (
-            bool isReal,
-            string memory batchCode,
-            string memory origin,
-            string memory certHash,
-            Status status,
-            address farmer
-        )
-    {
-        require(
-                _batchId > 0 &&
-                _batchId <= batchCounter,
-                "Batch khong ton tai"
-                );
-        
-        Batch memory b = batches[_batchId];
-        if (
-            !b.isActive ||
-            _qrHash != b.productHash
-        ) {
-        return (false, "", "", "", Status.Created, address(0));
-        }
-        return (
-            true,                          
-            b.batchCode,
-            b.origin,
-            b.certHash,
-            b.status,
-            b.farmer
-        );
-    }
-    //Cập nhật trạng thái
-    function updateStatus(uint256 _batchId, Status _newStatus) external {
-        require(_batchId > 0 &&
-            _batchId <= batchCounter,
-            "Batch khong ton tai"
-                );
+    // Cập nhật trạng thái
+    function updateStatus(uint256 _batchId, Status _newStatus) external batchExists(_batchId) {
         require(hasRole(FARMER_ROLE, msg.sender), "Not farmer role");
-        require( batches[_batchId].farmer == msg.sender, "Khong phai chu lo hang" );
-        require(batches[_batchId].isActive, "Lo hang khong con hieu luc");
+        require( batches[_batchId].farmer == msg.sender, "Not batch owner" );
+        require(batches[_batchId].isActive, "Batch is inactive");
        Status current = batches[_batchId].status;
         // Kiểm tra thứ tự trạng thái
         if (current == Status.Created) {
-            require(_newStatus == Status.Harvested, "Phai chuyen sang Harvested truoc");
+            require(_newStatus == Status.Harvested, "Must transition to Harvested first");
         } else if (current == Status.Harvested) {
-            require(_newStatus == Status.Processing, "Phai chuyen sang Processing truoc");
-        } else if (current == Status.Processing) {
-            require( batches[_batchId].certified,"Batch chua duoc thanh tra duyet" );
-            require(_newStatus == Status.Transporting, "Phai chuyen sang Transporting truoc");
+            require(_newStatus == Status.Processing, "Must transition to Processing first");
+        } else if (current == Status.Packed) {
+            require(batches[_batchId].certified, "Batch has not been certified by an inspector");
+            require(_newStatus == Status.Transporting, "Must transition to Transporting first");
         } else if (current == Status.Transporting) {
-            require(_newStatus == Status.Delivered, "Phai chuyen sang Delivered truoc");
+            require(_newStatus == Status.Delivered, "Must transition to Delivered first");
         } else {
-            revert("Khong the cap nhat trang thai nay");
+            revert("Cannot update to this status");
+        }
+        if (_newStatus == Status.Harvested) {
+            batches[_batchId].harvestedAt =
+                block.timestamp;
         }
         batches[_batchId].status = _newStatus;
         if (_newStatus == Status.Delivered) {
             batches[_batchId].deliveredAt =
-            block.timestamp;
+                block.timestamp;
         }
         history[_batchId].push(
             StatusLog(_newStatus, block.timestamp, msg.sender)
         );
+        emit StatusUpdated(
+        _batchId,
+        _newStatus
+);
     }
-     // Cập nhật vận chuyển
-    function updateTransport(uint256 _batchId,  
-                            string memory _location, 
-                            int _temperature) external {
-        require(
-                _batchId > 0 &&
-                _batchId <= batchCounter,
-                "Batch khong ton tai"
-         );
-        require(
-batches[_batchId].status == Status.Processing ||
-            batches[_batchId].status == Status.Transporting,
-            "Trang thai khong hop le"
-        );
-        require(
-        batches[_batchId].certified,"Batch chua duoc thanh tra duyet"
-        );
-        //Bảo mật
-        require(hasRole(FARMER_ROLE, msg.sender),"Not farmer role");
-        require( batches[_batchId].farmer == msg.sender, "Khong phai chu lo hang");
-        // Kiểm tra lô hàng còn hiệu lực
-        require(batches[_batchId].isActive, "Lo hang khong ton tai");
-        // Kiểm tra địa điểm
-        require(bytes(_location).length > 0, "Location required");
-        // Tạo record vận chuyển mới
-        TransportRecord memory record =
-            TransportRecord({status: Status.Transporting, 
-                            location: _location, 
-                            temperature: _temperature, 
-                            timestamp: block.timestamp, 
-                            operator: msg.sender});
-        // Lưu lịch sử vận chuyển
-        transportHistory[_batchId].push(record);
-        // Cập nhật trạng thái lô hàng
-        batches[_batchId].status = Status.Transporting;
-        history[_batchId].push(StatusLog(Status.Transporting,
-                                        block.timestamp,
-                                        msg.sender )
-                                        );
-        // Kiểm tra nhiệt độ
-        checkTemperatureViolation(_batchId, _temperature);
-        // Phát event
-        emit TransportUpdated(_batchId, _location, _temperature, Status.Transporting);
-    }
-    // Kiểm tra vi phạm nhiệt độ
-    function checkTemperatureViolation(uint256 _batchId, int _temperature) internal {
-       if (_temperature < 12 || _temperature > 15) {
-        emit TemperatureViolation(
-            _batchId,
-            _temperature,
-            "Unsafe storage temperature for durians"
-        );
-    }
-}
-         
-    // Xem danh sách
-    function getHistory(uint256 _batchId)
-        external
-        view
-        returns (StatusLog[] memory)
-    {
-        return history[_batchId];
-    }
-    function getAllFarms() external view returns (address[] memory) {
-        return farmList;
-    }
-    function isProductValid(uint256 _batchId) external view returns (bool) {
-        return batches[_batchId].isActive;
-    }
-    // Lưu lý do thu hồi
-    mapping(uint256 => string) public recallReasons;
-    // Event thu hồi lô hàng
-    event BatchRecalled(
-        uint256 indexed batchId,
-        string reason
-    );
-    // THU HỒI LÔ HÀNG
+    // Thu hồi lô hàng
     function recallBatch(
         uint256 _batchId,
         string memory _reason
-    ) external {
-        require(_batchId > 0 &&
-                _batchId <= batchCounter,
-                "Batch khong ton tai"
-                );
+    ) external batchExists(_batchId)  {
         // Kiểm tra quyền: Chỉ farmer của lô hàng hoặc admin mới được thu hồi
         require(
             batches[_batchId].farmer == msg.sender ||
@@ -388,8 +340,8 @@ batches[_batchId].status == Status.Processing ||
             "Unauthorized recall"
         );
         // Kiểm tra lô hàng còn hoạt động
-        require(batches[_batchId].isActive, "Lo hang da o trang thai khong hoat dong");
-        require(bytes(_reason).length > 0, "Ly do thu hoi khong duoc de trong");
+        require(batches[_batchId].isActive, "Batch is inactive");
+        require(bytes(_reason).length > 0, "Recall reason required");
         // Chuyển trạng thái sang Recalled
         batches[_batchId].status = Status.Recalled;
         // Vô hiệu hóa lô hàng
@@ -410,38 +362,115 @@ batches[_batchId].status == Status.Processing ||
             _reason
         );
     }
-    // TRA CỨU TOÀN BỘ THÔNG TIN
-    function getBatchFullInfo(uint256 _batchId)
-        external
-        view
-        returns (
-            Batch memory batchInfo,
-            TransportRecord[] memory transportLogs,
-            string memory recallReason)
-    {
+//  7. QUẢN LÍ VẬN CHUYỂN
+    // Cập nhật vận chuyển
+    function updateTransport(uint256 _batchId,  
+                            string memory _location, 
+                            int _temperature) external batchExists(_batchId) {
+        if (transportHistory[_batchId].length > 0) {
         require(
-            _batchId > 0 &&
-            _batchId <= batchCounter,
-            "Batch khong ton tai"
+        block.timestamp >
+        transportHistory[_batchId][
+            transportHistory[_batchId].length - 1
+        ].timestamp + 1 hours,
+        "Too frequent"
         );
-        return (
-            batches[_batchId],
-            transportHistory[_batchId],
-            recallReasons[_batchId]
+        }
+        require(
+        batches[_batchId].status ==
+        Status.Transporting,
+        "Not transporting"
         );
+        require(
+        batches[_batchId].packedAt > 0,
+        "Batch not packed yet"
+        );
+        require(
+        batches[_batchId].certified,"Batch has not been certified by an inspector"
+        );
+        //Bảo mật
+        require(hasRole(FARMER_ROLE, msg.sender),"Not farmer role");
+        require( batches[_batchId].farmer == msg.sender, "Not batch owner");
+        // Kiểm tra lô hàng còn hiệu lực
+        require(batches[_batchId].isActive, "Batch is inactive");
+        // Kiểm tra địa điểm
+        require(bytes(_location).length > 0, "Location required");
+        //Tạo record vận chuyển mới
+        TransportRecord memory record =
+            TransportRecord({status: Status.Transporting, 
+                            location: _location, 
+                            temperature: _temperature, 
+                            timestamp: block.timestamp, 
+                            operator: msg.sender});
+        // Lưu lịch sử vận chuyển
+        transportHistory[_batchId].push(record);
+        // Kiểm tra nhiệt độ
+        checkTemperatureViolation(_batchId, _temperature);
+        // Phát event
+        emit TransportUpdated(_batchId, _location, _temperature, Status.Transporting);
     }
-    // KIỂM TRA ĐỘ AN TOÀN
+    // Kiểm tra vi phạm nhiệt độ
+    function checkTemperatureViolation(uint256 _batchId, int _temperature) internal {
+        DurianType dType = batches[_batchId].durianType;
+        TempThreshold memory th = tempThresholds[dType];
+        if (_temperature < th.minTemp || _temperature > th.maxTemp) {
+            batches[_batchId].hasTemperatureViolation = true;
+        string memory warning = string(abi.encodePacked(
+            "Unsafe temperature for ",
+            uint8(dType) == 0 ? "Ri6" : (uint8(dType) == 1 ? "Monthong" : "MusangKing")
+        ));
+        emit TemperatureViolation(_batchId, _temperature, warning);
+        }
+    }
+    function setTempThreshold(DurianType _type, int8 _min, int8 _max) external onlyOwner {
+        require(_min < _max, "Invalid threshold");
+        tempThresholds[_type] = TempThreshold(_min, _max);
+        emit TempThresholdUpdated(_type, _min, _max);
+}  
+// 8. TRUY XUẤT VÀ XÁC THỰC SẢN PHẨM   
+    // Tạo QR code cho sản phẩm
+     function getQRCode(uint256 _batchId) public view batchExists(_batchId) returns (bytes32) {
+      
+        return batches[_batchId].productHash;
+    }
+    // Người dùng kiểm tra sản phẩm
+    function checkProduct(uint256 _batchId, bytes32 _qrHash)
+        external 
+        view batchExists(_batchId)
+        returns (
+            bool isReal,
+            string memory batchCode,
+            string memory origin,
+            string memory certHash,
+            Status status,
+            address farmer
+        )
+        {
+        
+        Batch memory b = batches[_batchId];
+        if (
+            !b.isActive ||
+            _qrHash != b.productHash
+        ) {
+        return (false, "", "", "", Status.Created, address(0));
+        }
+        return (
+            true,                          
+            b.batchCode,
+            b.origin,
+            b.certHash,
+            b.status,
+            b.farmer
+        );
+        }
+    // Kiểm tra độ an toàn
     function isProductSafe(uint256 _batchId)
-        external
-        view
+        external 
+        view batchExists(_batchId)
         returns (
             bool isSafe,
             string memory message)
     {
-        require(_batchId > 0 &&
-                _batchId <= batchCounter,
-                "Batch khong ton tai"
-                );
         Batch memory b = batches[_batchId];
         // Kiểm tra xem lô hàng có bị thu hồi hoặc ngắt hoạt động không
         if (
@@ -450,37 +479,59 @@ batches[_batchId].status == Status.Processing ||
         ) {
             return (
                 false,
-                string(abi.encodePacked("Lo hang da bi thu hoi. Ly do: ",recallReasons[_batchId] ) ) );
+                string(abi.encodePacked("Batch recalled. Reason: ",recallReasons[_batchId] ) ) );
         }
         // Kiểm tra toàn bộ lịch sử vận chuyển
-        TransportRecord[] memory records = transportHistory[_batchId];
-        for (uint256 i = 0; i < records.length; i++) {
+        if (b.hasTemperatureViolation) {
+            return (false, "Temperature violation detected during transport");
+        }
         if (
-        records[i].temperature < 12 ||
-        records[i].temperature > 15
-        ) {
+        b.deliveredAt > 0 &&
+        b.deliveredAt >
+        b.packedAt +
+        MAX_TRANSPORT_DAYS * 1 days
+        )
+        {
         return (
             false,
-            "San pham khong an toan do vi pham nhiet do bao quan sau rieng"
+            "Transport duration exceeded limit"
         );
-    }
-}
-    if (
-    b.deliveredAt > 0 &&
-    b.deliveredAt >
-    b.harvestedAt +
-    MAX_TRANSPORT_DAYS * 1 days
-)
-{
-    return (
-        false,
-        "Transport duration exceeded limit"
-    );
-}   
+    }   
         return (true, "Safe product");
     }
 
-        // Lấy danh sách ID batch của farmer
+// 9. TRA CỨU THÔNG TIN 
+    // Xem lịch sử trạng thái
+    function getHistory(uint256 _batchId)
+        external view batchExists(_batchId)
+        returns (StatusLog[] memory)
+    {
+        return history[_batchId];
+    }
+    // Xem lịch sử vận chuyển
+    function getTransportHistory(uint256 _batchId)
+    external
+    view batchExists(_batchId)
+    returns (TransportRecord[] memory)
+    {
+    return transportHistory[_batchId];
+    }
+    // Xem thông tin đầy đủ lô hàng
+    function getBatchFullInfo(uint256 _batchId)
+        external 
+        view batchExists(_batchId)
+        returns (
+            Batch memory batchInfo,
+            TransportRecord[] memory transportLogs,
+            string memory recallReason)
+    {
+        return (
+            batches[_batchId],
+            transportHistory[_batchId],
+            recallReasons[_batchId]
+        );
+    }
+    // Danh sách batch của farmer
     function getFarmerBatches(address _farmer)
     external
     view
@@ -488,8 +539,8 @@ batches[_batchId].status == Status.Processing ||
 {
     return farmerBatches[_farmer];
 }
-    // Lấy toàn bộ batch trong hệ thống
-function getAllBatches()
+    // Danh sách tất cả batch trong hệ thống
+    function getAllBatches()
     external
     view
     returns (Batch[] memory)
@@ -503,27 +554,12 @@ function getAllBatches()
 
     return allBatches;
 }
-// Kiểm tra role của ví
-function getMyRole(address _user)
-    external
-    view
-    returns (string memory)
-{
-    if (hasRole(DEFAULT_ADMIN_ROLE, _user)) {
-        return "ADMIN";
+    // Danh sách tất cả các trang trại 
+    function getAllFarms() external view returns (address[] memory) {
+        return farmList;
     }
-
-    if (hasRole(INSPECTOR_ROLE, _user)) {
-        return "INSPECTOR";
-    }
-
-    if (hasRole(FARMER_ROLE, _user)) {
-        return "FARMER";
-    }
-
-    return "CONSUMER";
-}
-function getFarmInfo(address _farmer)
+    // Thông tin trang trại
+    function getFarmInfo(address _farmer)
     external
     view
     returns (
@@ -532,17 +568,13 @@ function getFarmInfo(address _farmer)
     )
 {
     Farm memory f = farms[_farmer];
-
     return (
         f.name,
         f.isVerified
     );
 }
-function getTransportHistory(uint256 _batchId)
-    external
-    view
-    returns (TransportRecord[] memory)
-{
-    return transportHistory[_batchId];
-}
+    // Kiểm tra trạng thái hoạt động
+    function isProductValid(uint256 _batchId) external view  batchExists(_batchId) returns (bool) {
+        return batches[_batchId].isActive;
+    }
 }

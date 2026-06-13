@@ -5,9 +5,10 @@ module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
+      viaIR: true, 
       optimizer: {
         enabled: true,
-        runs: 50,
+        runs: 200,
       },
     },
   },
@@ -15,7 +16,7 @@ module.exports = {
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_URL,
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY], 
     },
   },
 };
