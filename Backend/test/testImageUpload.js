@@ -3,9 +3,7 @@ const { uploadImageToIPFS } =
 
 async function testImageUpload() {
   const result =
-    await uploadImageToIPFS(
-      "./uploads/cashew_certificate.jpg"
-    );
+    await uploadImageToIPFS("./uploads/ri6_certificate.jpg");
 
   console.log(result);
 }
