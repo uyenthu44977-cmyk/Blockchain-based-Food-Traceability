@@ -36,6 +36,15 @@ const demoData = [
 
   metadataCID:
     "Qme1smiD78ERFoKqiVeyodb9HzLkBYSsiAxDd7eb9VpiFD"
+  },
+
+  {
+  productName: "Cashew",
+
+  origin: "Bình Phước",
+
+  metadataCID:
+    "QmTs2MzLMSvDen1S8QHdphPjr2eJgMfLB3W9emdg3C3THo"
 }
 
 ];
