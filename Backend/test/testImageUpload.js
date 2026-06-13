@@ -1,9 +1,9 @@
-const { uploadImageToIPFS } =
-  require("../services/pinataService");
+const { uploadImageToIPFS } = require("../services/pinataService");
 
 async function testImageUpload() {
-  const result =
-    await uploadImageToIPFS("./uploads/ri6_certificate.jpg");
+  const result = await uploadImageToIPFS(
+    "./uploads/Musangkinh_certificate.png"
+  );
 
   console.log(result);
 }

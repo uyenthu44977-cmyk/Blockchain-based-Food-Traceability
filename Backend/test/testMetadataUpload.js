@@ -4,7 +4,7 @@ const { uploadJSONToIPFS } =
 
 async function testMetadataUpload() {
   const metadata = JSON.parse(
-    fs.readFileSync("./metadata/ri6.json", "utf8")
+    fs.readFileSync("./metadata/musangking.json", "utf8")
   );
 
   const result = await uploadJSONToIPFS(metadata);
