@@ -52,7 +52,7 @@ export default function ConnectWallet() {
     <button
       onClick={handleConnect}
     >
-      Connec
+      Connect Wallet
     </button>
 
 
