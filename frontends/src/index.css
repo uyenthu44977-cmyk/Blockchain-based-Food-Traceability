@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap');
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #172554,
+      #020617 50%,
+      #000000
+    );
+
+  color: white;
+  font-family: 'Black Ops One', cursive;
+}
+
+
+/* Ánh sáng nền chuyển động */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(37,99,235,0.25),
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(59,130,246,0.2),
+      transparent 25%
+    );
+
+  animation: glowMove 10s infinite alternate;
+  z-indz-index: 0;
+pointer-events: none;ex: -2;
+}
+
+.star {
+  position: absolute;
+
+  width: 3px;
+  height: 3px;
+
+  background: white;
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 6px #ffffff,
+    0 0 12px #38bdf8,
+    0 0 20px #2563eb;
+
+  animation: flyUp linear infinite;
+}
+
+
+/* sao bay từ dưới lên */
+
+@keyframes flyUp {
+
+  0% {
+
+    transform:
+      translateY(110vh);
+
+    opacity: 0;
+
+  }
+
+
+  20% {
+
+    opacity: 1;
+
+  }
+
+
+  80% {
+
+    opacity: 1;
+
+  }
+
+
+  100% {
+
+    transform:
+      translateY(-20vh);
+
+    opacity: 0;
+
+  }
+
+}
+.stars {
+
+  position: fixed;
+
+  inset: 0;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  z-index: 1;
+
+}
+#root {
+ position: relative;
+ z-index: 2;
+}
