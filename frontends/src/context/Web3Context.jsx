@@ -55,26 +55,6 @@ console.log("Chain ID:", network.chainId);
 
 setContract(contractInstance);
 
-console.log(
-  "Admin role:",
-  await contractInstance.getMyRole(
-    "0x6A0EA560D15c8DD9309600f2fF330E63bbf0bD21"
-  )
-);
-
-console.log(
-  "Farmer role:",
-  await contractInstance.getMyRole(
-    "0x72Bf7BFf64678Add444Be8f5f2A6afaB809Af1f6"
-  )
-);
-
-console.log(
-  "Inspector role:",
-  await contractInstance.getMyRole(
-    "0x5087c07ae72AC29B409fD3823aF8E3F599A224C1"
-  )
-);
 
 const roleFromContract =
   await contractInstance.getMyRole(
