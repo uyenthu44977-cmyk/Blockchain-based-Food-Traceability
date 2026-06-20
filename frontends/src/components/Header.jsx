@@ -37,7 +37,7 @@ export default function Header() {
             fontSize: "18px",
             fontFamily: "'Smooch Sans', sans-serif"       
              }}>
-          Blockchain Food Traceability
+          Durianchain 
         </h2>
       </div>
 

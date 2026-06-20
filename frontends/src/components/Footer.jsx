@@ -19,7 +19,7 @@ export default function Footer() {
           letterSpacing: "1px",
         }}
       >
-        © 2026 Blockchain Food Traceability
+        © 2026 Blockchain-powered Durian Traceability
       </p>
     </footer>
   );

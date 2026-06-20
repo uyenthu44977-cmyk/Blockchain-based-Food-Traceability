@@ -1,31 +1,24 @@
-import { useWeb3 }
-from "../context/Web3Context";
+import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({
-  role,
-  children,
-}) {
+export default function ProtectedRoute({ children, role }) {
+  // Lấy role hiện tại của người dùng từ localStorage
+  const userRole = localStorage.getItem("role");
 
-  const {
-    address,
-    role: userRole,
-  } = useWeb3();
-
-  if (!address) {
-    return (
-      <h2>
-        Vui lòng kết nối ví
-      </h2>
-    );
+  // 1. Nếu chưa kết nối ví (chưa có role), đá về trang chủ
+  if (!userRole) {
+    return <Navigate to="/" replace />;
   }
 
-  if (userRole !== role) {
-    return (
-      <h2>
-        Access Denied
-      </h2>
-    );
+  // 2. CẬP NHẬT LOGIC: Nếu tài khoản là ADMIN thì BỎ QUA kiểm tra, cho vào luôn
+  if (userRole === "ADMIN") {
+    return children;
   }
 
+  // 3. Đối với các ví khác (Không phải Admin), nếu sai role yêu cầu thì chặn lại
+  if (role && userRole !== role) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Nếu đúng role thì cho vào trang bình thường
   return children;
 }

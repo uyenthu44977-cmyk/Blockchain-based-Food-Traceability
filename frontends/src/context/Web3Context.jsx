@@ -1,18 +1,11 @@
 import { createContext, useContext, useState } from "react";
 import { ethers } from "ethers";
-// Import artifact
 import contractArtifact from "../abi/FoodTrace.json";
 
-// Lấy mảng ABI từ artifact
 const contractABI = contractArtifact.abi;
 
-// Hardcode địa chỉ contract (bạn có thể chuyển sang .env sau)
-const CONTRACT_ADDRESS = "0x396d259fE4b57859d5E05AE30Cb7d667aAc6d234";
-
-console.log("🔍 ABI type:", typeof contractABI);
-console.log("🔍 Is ABI array?", Array.isArray(contractABI));
-console.log("🔍 ABI length:", contractABI?.length);
-console.log("🔍 CONTRACT_ADDRESS:", CONTRACT_ADDRESS);
+const CONTRACT_ADDRESS =
+  "0x396d259fE4b57859d5E05AE30Cb7d667aAc6d234";
 
 const Web3Context = createContext();
 
@@ -28,52 +21,115 @@ export function Web3Provider({ children }) {
         return null;
       }
 
-      // 1. Kết nối ví
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      const walletAddress = accounts[0];
+     const accounts = await window.ethereum.request({
+  method: "eth_requestAccounts",
+});
+
+const walletAddress = accounts[0].toLowerCase();
+
       setAddress(walletAddress);
 
-      // 2. Gán role (tạm thời ADMIN)
-      const userRole = "ADMIN";
-      setRole(userRole);
+      let userRole = "NONE";
 
-      // 3. Tạo contract
       try {
-        // Kiểm tra ABI có hợp lệ không
-        if (!contractABI || !Array.isArray(contractABI) || contractABI.length === 0) {
-          throw new Error("ABI không hợp lệ hoặc không phải mảng. Kiểm tra file FoodTrace.json");
+        if (!contractABI || !Array.isArray(contractABI)) {
+          throw new Error("ABI không hợp lệ");
         }
 
-        // Kiểm tra địa chỉ
-        if (!ethers.isAddress(CONTRACT_ADDRESS)) {
-          throw new Error(`Địa chỉ contract không hợp lệ: ${CONTRACT_ADDRESS}`);
-        }
+        const provider = new ethers.BrowserProvider(
+          window.ethereum
+        );
+const network = await provider.getNetwork();
 
-        const ethProvider = new ethers.BrowserProvider(window.ethereum);
-        const ethSigner = await ethProvider.getSigner();
+console.log("Chain ID:", network.chainId);
 
-        const contractInstance = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          contractABI,
-          ethSigner
+        const signer =
+          await provider.getSigner();
+
+        const contractInstance =
+  new ethers.Contract(
+    CONTRACT_ADDRESS,
+    contractABI,
+    signer
+  );
+
+setContract(contractInstance);
+
+console.log(
+  "Admin role:",
+  await contractInstance.getMyRole(
+    "0x6A0EA560D15c8DD9309600f2fF330E63bbf0bD21"
+  )
+);
+
+console.log(
+  "Farmer role:",
+  await contractInstance.getMyRole(
+    "0x72Bf7BFf64678Add444Be8f5f2A6afaB809Af1f6"
+  )
+);
+
+console.log(
+  "Inspector role:",
+  await contractInstance.getMyRole(
+    "0x5087c07ae72AC29B409fD3823aF8E3F599A224C1"
+  )
+);
+
+const roleFromContract =
+  await contractInstance.getMyRole(
+    walletAddress
+  );
+
+
+userRole =
+  roleFromContract.toUpperCase();
+
+console.log(
+  "Wallet:",
+  walletAddress
+);
+
+console.log(
+  "Role:",
+  userRole
+); 
+      } catch (contractError) {
+        console.error(
+          "Contract Error:",
+          contractError
         );
 
-        setContract(contractInstance);
-        console.log("✅ Contract instance created:", contractInstance);
-      } catch (contractError) {
-        console.error("❌ Lỗi tạo contract:", contractError);
-        alert("Lỗi tạo contract: " + contractError.message);
-        // Vẫn giữ contract = null nhưng không block navigation
+        userRole = "NONE";
       }
+      alert(
+  `Wallet: ${walletAddress}
+Role: ${userRole}`
+);
 
-      console.log("✅ Connected:", walletAddress);
-      console.log("✅ Role:", userRole);
-      return userRole;
+      setRole(userRole);
+
+      localStorage.setItem(
+        "role",
+        userRole
+      );
+
+      localStorage.setItem(
+        "walletAddress",
+        walletAddress
+      );
+
+      return {
+        role: userRole,
+        wallet: walletAddress,
+      };
     } catch (error) {
-      console.error("❌ Lỗi kết nối ví:", error);
-      alert("Lỗi kết nối: " + error.message);
+      console.error(error);
+
+      alert(
+        "Lỗi kết nối MetaMask"
+      );
+
       return null;
     }
   };

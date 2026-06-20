@@ -1,9 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 
-import ConnectWallet
-from "../components/ConnectWallet";
-
+import ConnectWallet from "../components/ConnectWallet";
 
 export default function Home() {
 
@@ -67,7 +65,7 @@ export default function Home() {
       </div>
 
 
-      <div
+            <div
         style={{
           display: "flex",
           justifyContent: "center",
@@ -80,122 +78,78 @@ export default function Home() {
         }}
       >
 
-
         {/* BUTTONS */}
-
-
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px"
+            gap: "50px"
           }}
         >
-
-
           <button
             style={{
-              fontFamily:
-                "'Smooch Sans', sans-serif",
-
-
-              padding:
-                "20px 30px",
-
-
-              background:
-                "transparent",
-
-
-              color:
-                "#eae1ec",
-
-
-              border:
-                "2px solid #22b8ee",
-
-
-              borderRadius:
-                "50px",
-
-
-              fontSize:
-                "25px",
-
-
-              cursor:
-                "pointer",
-
-
-              boxShadow:
-                "0 0 10px #88b5bc, 0 0 25px #22d3ee"
+              fontFamily: "'Smooch Sans', sans-serif",
+              padding: "20px 30px",
+              background: "transparent",
+              color: "#53b1ec",
+              border: "2px solid #22b8ee",
+              borderRadius: "50px",
+              fontSize: "25px",
+              cursor: "pointer",
+              boxShadow: "0 0 10px #88b5bc, 0 0 25px #22d3ee"
             }}
-
-
             onClick={goSearch}
           >
             Search Products
           </button>
 
-
-          {/* CONNECT WALLET */}
-
-
           <ConnectWallet />
-
-
         </div>
 
-
         {/* TITLE */}
-
-
-        <h1
+        <div
           style={{
-            color: "#e0ffff",
-
-
-            fontFamily:
-              "'Smooch Sans', sans-serif",
-
-
-            textAlign:
-              "center",
-
-
-            fontSize:
-              "85px",
-
-
-            fontWeight:
-              "400",
-
-
-            letterSpacing:
-              "3px",
-
-
-            lineHeight:
-              "1.2",
-
-
-            textShadow: `
-              0 0 5px #22d3ee,
-              0 0 15px #22d3ee,
-              0 0 35px #06b6d4,
-              0 0 60px #0891b2
-            `
+            textAlign: "center"
           }}
         >
-          Blockchain Food
-          <br />
-          Traceability
-        </h1>
+          <h1
+            style={{
+              color: "#e0ffff",
+              fontFamily: "'Black Ops One', cursive",
+              fontSize: "85px",
+              fontWeight: "400",
+              letterSpacing: "4px",
+              lineHeight: "1.1",
+              margin: 0,
+              textTransform: "uppercase",
+              textShadow: `
+                0 0 5px #22d3ee,
+                0 0 15px #22d3ee,
+                0 0 35px #06b6d4,
+                0 0 60px #0891b2
+              `
+            }}
+          >
+            DURIANCHAIN
+          </h1>
 
+          <p
+            style={{
+              fontStyle: "italic",
+              marginTop: "12px",
+              color: "#a5f3fc",
+              fontFamily: "'Smooch Sans', sans-serif",
+              fontSize: "32px",
+              letterSpacing: "2px",
+              textShadow: "0 0 10px #22d3ee"
+            }}
+          >
+            Blockchain-powered Durian Traceability
+          </p>
+        </div>
 
       </div>
 
-
     </>
   );
-}
+} 
