@@ -86,8 +86,7 @@ export default function BatchManagement() {
   const updateStatus = async (status) => {
     try {
       setLoading(true);
-      const tx = await contract.updateStatus(Number(statusBatchId), status);
-      await tx.wait();
+  const tx = await contract.updateStatus(statusBatchId, status);      await tx.wait();
       alert("Cập nhật trạng thái thành công");
     } catch (error) {
       alert(error.reason || error.message);
@@ -99,8 +98,7 @@ export default function BatchManagement() {
   const markPacked = async () => {
     try {
       setLoading(true);
-      const tx = await contract.markPacked(Number(packedBatchId));
-      await tx.wait();
+  const tx = await contract.markPacked(packedBatchId);      await tx.wait();
       alert("Đóng gói thành công");
     } catch (error) {
       alert(error.reason || error.message);
@@ -113,7 +111,7 @@ export default function BatchManagement() {
     try {
       setLoading(true);
       const tx = await contract.updateTransport(
-        Number(transportData.batchId),
+        transportData.batchId,
         transportData.location,
         Number(transportData.temperature)
       );
@@ -129,7 +127,8 @@ export default function BatchManagement() {
   const recallBatch = async () => {
     try {
       setLoading(true);
-      const tx = await contract.recallBatch(Number(recallData.batchId), recallData.reason);
+      const tx = await contract.recallBatch(
+        recallData.batchId, recallData.reason);
       await tx.wait();
       alert("Thu hồi thành công");
     } catch (error) {
@@ -184,7 +183,7 @@ export default function BatchManagement() {
         </div>
         <div style={styles.buttonGroupCenter}>
           <button onClick={createBatch} style={{ ...styles.btn, ...styles.btnGreen, width: "200px" }}>
-            Create Batch
+            1. Create Batch
           </button>
         </div>
       </div>
@@ -201,10 +200,10 @@ export default function BatchManagement() {
           />
         </div>
         <div style={styles.buttonGroupCenter}>
-          <button onClick={() => updateStatus(1)} style={{ ...styles.btn, ...styles.btnCyan }}>Harvested</button>
-          <button onClick={() => updateStatus(2)} style={{ ...styles.btn, ...styles.btnCyan }}>Processing</button>
-          <button onClick={() => updateStatus(4)} style={{ ...styles.btn, ...styles.btnCyan }}>Transporting</button>
-          <button onClick={() => updateStatus(5)} style={{ ...styles.btn, ...styles.btnGreen }}>Delivered</button>
+          <button onClick={() => updateStatus(1)} style={{ ...styles.btn, ...styles.btnCyan }}>2. Harvested</button>
+          <button onClick={() => updateStatus(2)} style={{ ...styles.btn, ...styles.btnCyan }}>3. Processing</button>
+          <button onClick={() => updateStatus(4)} style={{ ...styles.btn, ...styles.btnCyan }}>5. Transporting</button>
+          <button onClick={() => updateStatus(5)} style={{ ...styles.btn, ...styles.btnCyan }}>7. Delivered</button>
         </div>
       </div>
 
@@ -219,7 +218,7 @@ export default function BatchManagement() {
             style={{ ...styles.inputField, flex: 2, marginBottom: "0px" }}
           />
           <button onClick={markPacked} style={{ ...styles.btn, ...styles.btnRed, flex: 1, minWidth: "150px" }}>
-            Mark Packed
+            4. Mark Packed
           </button>
         </div>
       </div>
@@ -234,7 +233,7 @@ export default function BatchManagement() {
         </div>
         <div style={styles.buttonGroupCenter}>
           <button onClick={updateTransport} style={{ ...styles.btn, ...styles.btnCyan, width: "220px" }}>
-            Update Transport
+            6. Update Transport
           </button>
         </div>
       </div>
