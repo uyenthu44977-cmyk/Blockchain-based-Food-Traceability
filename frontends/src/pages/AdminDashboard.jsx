@@ -20,7 +20,7 @@ export default function AdminDashboard() {
     return (
       <div style={styles.loadingContainer}>
         <div style={{ ...styles.loadingText, color: "#ff3b30" }}>
-          ⚠️ CẢNH BÁO: Bạn không có quyền truy cập khu vực này!
+          CẢNH BÁO: Bạn không có quyền truy cập khu vực này!
         </div>
       </div>
     );
@@ -31,7 +31,8 @@ export default function AdminDashboard() {
       <div style={styles.dashboardContainer}>
         {/* KHU VỰC HEADER CỦA ADMIN */}
         <header style={styles.header}>
-          <div style={styles.badge}>🛡️ SYSTEM CONTROL</div>
+          <div style={styles.badge}>SYSTEM CONTROL</div>
+          {/* TIÊU ĐỀ CHINH*/}
           <h1 style={styles.mainTitle}>DURIANCHAIN ADMIN PANELS</h1>
           <p style={styles.subtitle}>
             Hệ thống quản lý chuỗi cung ứng sầu riêng trên nền tảng Blockchain
@@ -42,14 +43,13 @@ export default function AdminDashboard() {
         {/* NỘI DUNG CHÍNH: QUẢN LÝ VAI TRÒ */}
         <section style={styles.sectionBox}>
           <div style={styles.sectionHeader}>
-            <span style={styles.sectionIcon}>👥</span>
             <h2 style={styles.sectionTitle}>PHÂN QUYỀN THÀNH VIÊN (ROLE MANAGEMENT)</h2>
           </div>
           <p style={styles.sectionDesc}>
-            Cấp quyền hoặc thu hồi các vai trò Farmer (Nông dân), Inspector (Kiểm định viên) trực tiếp trên Smart Contract.
+            Cấp quyền hoặc thu hồi các vai trò Farmer (Nông dân), Inspector (Kiểm định viên) trực tiếp trên Smart Contract
           </p>
           
-          {/* Component xử lý logic của bạn được bọc trong lớp layout mới */}
+          {/* Component xử lý logic được bọc trong bộ bo góc mới */}
           <div style={styles.componentWrapper}>
             <RoleManagement />
           </div>
@@ -59,10 +59,21 @@ export default function AdminDashboard() {
   );
 }
 
-// HỆ THỐNG CSS STYLE ĐỒNG BỘ PHONG CÁCH PHÁT QUANG CYBERPUNK
+// HỆ THỐNG CSS STYLE TẬP TRUNG - DỄ CHỈNH SỬA
 const styles = {
+  // ==========================================
+  // BẢNG ĐIỀU KHIỂN TRUNG TÂM (THAY ĐỔI TẠI ĐÂY LÀ TOÀN BỘ WEB ĐỔI THEO)
+  // ==========================================
+  GLOBAL_FONT: "'Smooch Sans', sans-serif",  // Font chữ toàn trang
+  BO_GOC_TRON: "15px",                       // Bạn muốn khung tròn bo góc luôn (50px tạo nút hình viên nhộng/khung siêu tròn)
+  BO_GOC_HOP: "15px",                        // Bo góc cho hộp lớn (Section Box)
+  
+
+  // ==========================================
+  // CẤU TRÚC LAYOUT CHI TIẾT (ĐÃ KẾ THỪA TỪ BẢNG TRÊN)
+  // ==========================================
   dashboardPage: {
-    background: "#07020f", // Nền tối sâu hoắm
+    background: "var(--bg-page, #0b0317d5)",
     minHeight: "100vh",
     padding: "40px 20px",
     color: "#ffffff",
@@ -79,11 +90,11 @@ const styles = {
   },
   badge: {
     display: "inline-block",
-    padding: "4px 12px",
-    background: "rgba(255, 0, 85, 0.1)",
-    border: "1px solid #ff0055",
-    borderRadius: "4px",
-    color: "#ff3377",
+    padding: "6px 16px",
+    background: "rgba(101, 12, 42, 0.1)",
+    border: "1px solid #e41313",
+    borderRadius: "50px",                   // Đã bo tròn khung badge
+    color: "#f10a0a",
     fontSize: "14px",
     fontWeight: "bold",
     letterSpacing: "2px",
@@ -91,57 +102,65 @@ const styles = {
     boxShadow: "0 0 10px rgba(255, 0, 85, 0.2)"
   },
   mainTitle: {
-    fontSize: "45px",
+    fontSize: "50px",                       // Tăng size chữ lớn hơn chút
     fontWeight: "900",
     margin: "0 0 10px 0",
-    color: "#00ffcc", // Màu xanh Cyan phát sáng công nghệ
-    textShadow: "0 0 15px rgba(0, 255, 204, 0.6)",
-    letterSpacing: "3px"
+    color: "#ffffff",                       // Màu lõi trắng giúp ánh sáng Neon trông thật hơn
+    letterSpacing: "3px",
+    textTransform: "uppercase",
+    
+    // HIỆU ỨNG NEON 
+    textShadow: `
+      0 0 7px #00bfff,
+      0 0 15px #00bfff,
+      0 0 30px #00bfff,
+      0 0 60px #00bfff,
+      0 0 100px #0051ff
+    `
   },
   subtitle: {
     fontSize: "20px",
-    color: "#a59cb0",
+    fontStyle: "italic",
+    color: "#b6b2bcc3",
     margin: "0 0 25px 0"
   },
   divider: {
-    height: "2px",
+    height: "1px",
     background: "linear-gradient(90deg, transparent, #ad22ee, #00ffcc, #ad22ee, transparent)",
     width: "100%",
-    boxShadow: "0 0 10px #00ffcc"
+    boxShadow: "0 0 10px #00aeff"
   },
   sectionBox: {
-    background: "#0d021a", // Nền hộp tối giống popup
-    border: "2px solid #ad22ee", // Viền màu tím neon
-    borderRadius: "16px",
+    background: "#cecadf52",
+    border: "2px solid #f0f0f5", 
+    borderRadius: "10px",                   // Bo góc hộp lớn mượt mà hơn (24px)
     padding: "30px",
-    boxShadow: "0 0 20px rgba(173, 34, 238, 0.25), inset 0 0 15px rgba(0, 255, 204, 0.05)",
+    boxShadow: "0 0 24px rgba(221, 209, 226, 0.3), inset 0 0 15px rgba(0, 255, 204, 0.05)",
   },
   sectionHeader: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     marginBottom: "10px"
   },
-  sectionIcon: {
-    fontSize: "28px",
-    filter: "drop-shadow(0 0 5px #ad22ee)"
-  },
+  
   sectionTitle: {
-    fontSize: "26px",
+    fontSize: "25px",
     fontWeight: "bold",
-    color: "#ffffff",
+    textAlign: "center",
+    color: "#f1f1f0",
     margin: 0,
     letterSpacing: "1.5px"
   },
   sectionDesc: {
-    fontSize: "18px",
-    color: "#8e829d",
+    fontSize: "15px",
+    color: "#f2f1f491",
     margin: "0 0 25px 0"
   },
   componentWrapper: {
-    background: "rgba(0, 0, 0, 0.3)",
-    borderRadius: "8px",
-    padding: "20px",
+    background: "rgba(0, 0, 0, 0.4)",
+    borderRadius: "50px",                   // BO TRÒN KHUNG CHỨA (Có tác dụng bo tròn các nút bên trong nếu chúng kế thừa)
+    padding: "25px",
     border: "1px solid rgba(173, 34, 238, 0.2)",
   },
   loadingContainer: {
@@ -152,8 +171,8 @@ const styles = {
     alignItems: "center"
   },
   loadingText: {
-    color: "#00ffcc",
-    fontSize: "30px",
+    color: "#88b6dc",
+    fontSize: "15px",
     fontFamily: "'Smooch Sans', sans-serif",
     textShadow: "0 0 10px #00ffcc"
   }

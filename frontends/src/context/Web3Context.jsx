@@ -82,10 +82,6 @@ console.log(
 
         userRole = "NONE";
       }
-      alert(
-  `Wallet: ${walletAddress}
-Role: ${userRole}`
-);
 
       setRole(userRole);
 
