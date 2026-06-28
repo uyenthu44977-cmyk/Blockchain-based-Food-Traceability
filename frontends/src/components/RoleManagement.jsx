@@ -240,21 +240,7 @@ const styles = {
     gap: "15px",
     marginBottom: "20px",
   },
-  // THIẾT KẾ CÁC Ô ĐIỀN THÔNG TIN (INPUT) KHUNG TRÒN
-  inputField: {
-    width: "100%",
-    padding: "15px 0px",
-    background: "rgba(13, 2, 26, 0.6)",
-    border: "1px solid #efeaf2",         // Viền màu tím mặc định
-    borderRadius: "50px",                // BO TRÒN VIÊN NHỘNG CHO INPUT
-    color: "#151313",
-    fontSize: "20px",
-    outline: "none",
-    fontFamily: "'Smooch Sans', sans-serif",
-    letterSpacing: "1px",
-    boxShadow: "inset 0 0 10px rgba(173, 34, 238, 0.2)",
-    marginBottom: "10px",
-  },
+
   buttonGroup: {
     display: "flex",
     gap: "20px",
@@ -271,8 +257,8 @@ const styles = {
     height: "50px",                         // Cố định chiều cao
     padding: "0px 20px",                    // Padding trái phải để chữ không dính sát viền tròn
     background: "rgba(13, 2, 26, 0.6)",
-    border: "1px solid #efeaf2",         
-    borderRadius: "50px",                
+    border: "1px solid #efeaf2",          // Viền màu tím mặc định  
+    borderRadius: "50px",                   // BO TRÒN VIÊN NHỘNG CHO INPUT
     color: "#ffffffc5",                       
     fontSize: "20px",                       
     outline: "none",

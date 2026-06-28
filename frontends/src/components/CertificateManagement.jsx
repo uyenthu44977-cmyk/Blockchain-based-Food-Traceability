@@ -283,11 +283,7 @@ const styles = {
   },
 
 
-  title:{
-    color:"#fff",
-    fontSize:"32px",
-    marginBottom:"10px"
-  },
+  
   title: {
   color: "#00BFFF",  
   fontSize: "32px",

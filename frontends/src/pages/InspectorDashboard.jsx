@@ -8,7 +8,7 @@ export default function CertifyBatch() {
   const { contract, address } = useWeb3();
   const viewMode = localStorage.getItem("viewMode");
 const isAdminView = viewMode === "ADMIN_VIEW";
-  const [loading, setLoading] = useState(false);
+  const [loading]=useState(false);
 
 
 
@@ -638,7 +638,6 @@ const styles = {
     flex: 1,
     minWidth: "140px",
     height: "45px",
-    background: "transparent",
     borderRadius: "50px",                
     fontSize: "20px",                      
     fontWeight: "bold",
