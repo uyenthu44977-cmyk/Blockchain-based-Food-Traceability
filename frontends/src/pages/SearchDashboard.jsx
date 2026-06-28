@@ -132,7 +132,7 @@ export default function SearchDashboard() {
     }
   }, [batchId]);
 
-}
+
 useEffect(() => {
     if(qrBatchId){
         searchProduct(qrBatchId);
@@ -835,4 +835,4 @@ style={{
 
 
 
-  
+}
