@@ -4,7 +4,7 @@ import { useWeb3 } from "../context/Web3Context";
 export default function CertifyBatch() {
   const { contract, address } = useWeb3();
   const [loading, setLoading] = useState(false);
-  const [batchId,setBatchId]=useState("");
+
   // State quản lý chuẩn xác dữ liệu nhập vào từ ô input
   const [certificates,setCertificates]=useState([]);
   const [loadingId,setLoadingId]=useState(null);
@@ -118,7 +118,7 @@ export default function CertifyBatch() {
 
       }catch(err){
 
-        alert(err.message);
+        alert(err.reason || err.message);
 
       }finally{
 
@@ -127,43 +127,6 @@ export default function CertifyBatch() {
       }
 
 };
-      
-      const handleCertify = async () => {
-
-        if(!batchId.trim()){
-
-          alert("Nhập Batch ID");
-
-          return;
-
-        }
-
-        try{
-
-          setLoading(true);
-
-          const tx =
-            await contract.certifyBatch(batchId);
-
-          await tx.wait();
-
-          alert("Chứng nhận thành công");
-
-          setBatchId("");
-
-        }catch(err){
-
-          alert(err.reason || err.message);
-
-        }finally{
-
-          setLoading(false);
-
-        }
-
-      };
-
-      };
 
   return (
     <div style={styles.container}>
@@ -176,16 +139,14 @@ export default function CertifyBatch() {
 
       <div style={styles.sectionBox}>
 
-<h3 style={styles.sectionTitle}>
-Đã duyệt
-</h3>
-
-
+      <h3 style={styles.sectionTitle}>
+      Chờ kiểm định
+      </h3>
       {
 
       certificates
       .filter(cert=>cert.status==="PENDING")
-      .filter(cert=>cert.status==="APPROVED")
+      
 
       .map(cert=>(
 
@@ -232,12 +193,83 @@ export default function CertifyBatch() {
       Xem chứng nhận
       </a>
 
-      <p style={{color:"#00ff66"}}>
+      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
 
+    <button
+    onClick={()=>approveCertificate(cert)}
+    disabled={loadingId===cert._id}
+    style={styles.btn}
+    >
+
+    Duyệt
+
+    </button>
+
+    <button
+    onClick={()=>rejectCertificate(cert)}
+    disabled={loadingId===cert._id}
+    style={styles.btn}
+    >
+
+    Từ chối
+
+    </button>
+
+</div>
+
+</div>
+    
+      ))
+
+      }
+      <div style={styles.sectionBox}>
+
+      <h3 style={styles.sectionTitle}>
+      Đã duyệt
+      </h3>
+
+      {
+      certificates
+      .filter(cert=>cert.status==="APPROVED")
+      .map(cert=>(
+
+      <div
+      key={cert._id}
+      style={{
+      border:"1px solid #555",
+      padding:"15px",
+      marginBottom:"15px",
+      borderRadius:"10px"
+      }}
+      >
+      <div>
+      <p><b>Batch:</b> {cert.batchCode}</p>
+
+      <p><b>Farmer:</b> {cert.farmerWallet}</p>
+
+      <p><b>Loại:</b> {cert.certType}</p>
+
+      <p style={{color:"#00ff66"}}>
+      <p><b>Batch ID:</b> {cert.batchId}</p>
+
+      <p><b>Ngày cấp:</b>
+      {new Date(cert.issueDate).toLocaleDateString()}
+      </p>
+
+      <p><b>Hết hạn:</b>
+      {new Date(cert.expiryDate).toLocaleDateString()}
+      </p>
+      <a
+      href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
+      target="_blank"
+      rel="noreferrer"
+      >
+      Xem chứng nhận
+      </a>
       Đã duyệt
 
       </p>
-
+      </div>
       </div>
 
       ))
@@ -245,28 +277,14 @@ export default function CertifyBatch() {
       }
 
 </div>
-
       </div>
-      <div style={styles.sectionBox}>
-        <h3 style={styles.sectionTitle}>Chứng nhận lô hàng</h3>
-        
-        <div style={styles.flexLayoutRow}>
-          {/* Ô INPUT ĐÃ ĐƯỢC ĐỒNG BỘ VALUE VÀ ONCHANGE CHUẨN XÁC */}
-          <input
-            placeholder="Nhập Batch ID (Ví dụ: SR2026201)"
-            value={batchId}
-            onChange={(e) => setBatchId(e.target.value)}
-            style={styles.inputField}
-          />
-          
-          <button onClick={handleCertify} style={styles.btn}>
-            Certify
-          </button>
-        </div>
       </div>
     </div>
-  );
+    
+ );
 }
+          
+
 
 // ==========================================
 // HỆ THỐNG CSS VIÊN NHỘNG ĐỒNG BỘ ADMIN & FARMER

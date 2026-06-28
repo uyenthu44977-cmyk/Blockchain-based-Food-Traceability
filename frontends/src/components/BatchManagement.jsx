@@ -118,7 +118,21 @@ const createBatch = async () => {
     );
 
     const receipt = await tx.wait();
-
+    const batchId = receipt.logs[0].args[0].toString();
+      await fetch(
+      `http://localhost:3002/api/certificates/${selectedCert}/use`,
+      {
+      method:"PUT",
+      headers:{
+      "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+      batchId,
+      batchCode:formData.batchCode
+      })
+      }
+      );
+      loadCertificates();
 // Tìm event BatchCreated
 const event = receipt.logs.find((log) => {
 
@@ -292,8 +306,13 @@ setSelectedCert("");
   </option>
 
   {
-    certificates.map(
-      (cert) => (
+    certificates
+      .filter(cert =>
+      cert.status==="UNUSED" ||
+      cert.status==="REJECTED"
+      )
+      .map(
+      (cert)=>(
 
         <option
           key={cert._id}
@@ -332,6 +351,9 @@ setSelectedCert("");
 
         <p>
           <b>Tên chứng nhận:</b> {cert.certName}
+        </p>
+        <p>
+          <b>Trạng thái:</b> {cert.status}
         </p>
 
         <a
