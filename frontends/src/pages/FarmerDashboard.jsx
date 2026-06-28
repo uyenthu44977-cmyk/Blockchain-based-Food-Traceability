@@ -1,32 +1,29 @@
 import { useWeb3 } from "../context/Web3Context";
 import BatchManagement from "../components/BatchManagement";
 
+
 export default function FarmerDashboard() {
   const { role } = useWeb3();
-
+const viewMode = localStorage.getItem("viewMode");
+  const isAdminView = viewMode === "ADMIN_VIEW";
   // Kiểm tra quyền truy cập Farmer
-  if (role !== "FARMER") {
+ if (role !== "FARMER" && viewMode !== "ADMIN_VIEW") {
 
 
+  return (
+    <h2>
+      Không có quyền
+    </h2>
+  );
 
-return (
-
-<h2>
-
-Không có quyền
-
-</h2>
-
-);
 
 }
-
 
 
   return (
     <div style={styles.dashboardPage}>
       <div style={styles.dashboardContainer}>
-        
+       
         {/* HEADER CỦA FARMER PHÁT SÁNG NEON */}
         <header style={styles.header}>
           <div style={styles.badge}> FARM CONTROL PANEL</div>
@@ -37,15 +34,24 @@ Không có quyền
           <div style={styles.divider}></div>
         </header>
 
+
         {/* NỘI DUNG CHÍNH GỌI TỪ BATCH MANAGEMENT */}
-        <div style={styles.componentWrapper}>
-          <BatchManagement />
-        </div>
+        <div
+  style={{
+    ...styles.componentWrapper,
+    pointerEvents: isAdminView ? "none" : "auto",
+    opacity: isAdminView ? 0.7 : 1,
+  }}
+>
+  <BatchManagement />
+</div>
+
 
       </div>
     </div>
   );
 }
+
 
 // HỆ THỐNG CSS LAYOUT BÊN NGOÀI
 const styles = {
@@ -122,3 +128,4 @@ const styles = {
     textShadow: "0 0 10px #ff3b30"
   }
 };
+

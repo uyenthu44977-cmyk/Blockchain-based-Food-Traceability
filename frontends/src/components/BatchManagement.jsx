@@ -5,8 +5,14 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { useWeb3 } from "../context/Web3Context";
 
+
+
+
 export default function BatchManagement() {
   const { contract, address } = useWeb3();
+
+
+
 
   // ==========================================
   // LOGIC STATES - GIỮ NGUYÊN 100% TỪ CODE GỐC
@@ -17,12 +23,17 @@ export default function BatchManagement() {
 setCertificates] =
 useState([]);
 
+
+
+
 const [selectedCert,
 setSelectedCert] =
 useState("");
-const [showQR, setShowQR] = useState(false);
-const [qrUrl, setQrUrl] = useState("");
-const [newBatchId, setNewBatchId] = useState("");
+const [qrModal, setQrModal] = useState({
+  show: false,
+  batchId: "",
+  url: ""
+});
   const [formData, setFormData] =
 useState({
   batchCode: "",
@@ -34,8 +45,14 @@ useState({
   quantity: ""
 });
 
+
+
+
   const [statusBatchId, setStatusBatchId] = useState("");
   const [packedBatchId, setPackedBatchId] = useState("");
+
+
+
 
   const [transportData, setTransportData] = useState({
     batchId: "",
@@ -43,10 +60,16 @@ useState({
     temperature: ""
   });
 
+
+
+
   const [recallData, setRecallData] = useState({
     batchId: "",
     reason: ""
   });
+
+
+
 
   // ==========================================
   // HANDLERS & LOGIC FUNCTIONS - GIỮ NGUYÊN
@@ -55,13 +78,22 @@ useState({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+
+
+
   const handleTransportChange = (e) => {
     setTransportData({ ...transportData, [e.target.name]: e.target.value });
   };
 
+
+
+
   const handleRecallChange = (e) => {
     setRecallData({ ...recallData, [e.target.name]: e.target.value });
   };
+
+
+
 
   const loadMyBatches = async () => {
     try {
@@ -71,25 +103,71 @@ useState({
       console.log(error);
     }
   };
+  const handleBatchClick = async (batchId) => {
+  try {
+    // Lấy productHash để kiểm tra batch tồn tại (dùng getQRCode)
+    await contract.getQRCode(batchId);
+   
+    // Tạo URL cho QR
+    const url = `${window.location.origin}/search-product?batchId=${batchId}`;
+   
+    // Hiển thị modal QR
+    setQrModal({
+      show: true,
+      batchId: batchId,
+      url: url,
+    });
+  } catch (error) {
+    console.error("Lỗi lấy QR:", error);
+    alert("Không thể lấy QR cho batch này. Vui lòng thử lại.");
+  }
+};
   const loadCertificates = async () => {
+
+
+
 
     if (!address) return;
 
+
+
+
     try {
+
+
+
 
     const res = await fetch(
       `http://localhost:3002/api/certificates/farmer/${address}`
     );
 
+
+
+
     const data = await res.json();
+
+
+
 
     setCertificates(data);
 
+
+
+
   } catch (error) {
+
+
+
 
     console.log(error);
 
+
+
+
   }
+
+
+
 
 };
 const createBatch = async () => {
@@ -98,12 +176,21 @@ const createBatch = async () => {
       (item) => item._id === selectedCert
     );
 
+
+
+
     if (!cert) {
       alert("Vui lòng chọn chứng nhận");
       return;
     }
 
+
+
+
     setLoading(true);
+
+
+
 
     const tx = await contract.createBatch(
       formData.batchCode,
@@ -116,6 +203,9 @@ const createBatch = async () => {
       cert.certType,
       Number(formData.quantity)
     );
+
+
+
 
     const receipt = await tx.wait();
     const batchId = receipt.logs[0].args[0].toString();
@@ -135,56 +225,71 @@ const createBatch = async () => {
       loadCertificates();
 // Tìm event BatchCreated
 const event = receipt.logs.find((log) => {
-
   try {
-
-    const parsed =
-      contract.interface.parseLog(log);
-
+    const parsed = contract.interface.parseLog(log);
     return parsed.name === "BatchCreated";
-
   } catch {
-
     return false;
-
   }
-
 });
 
+
 if (event) {
-
-  const parsed =
-    contract.interface.parseLog(event);
-
-  const batchId =
-    parsed.args.batchId.toString();
-
-  setNewBatchId(batchId);
-
-  const url =
-    `${window.location.origin}/search-product?batchId=${batchId}`;
-
-  setQrUrl(url);
-
-  setShowQR(true); 
+  const parsed = contract.interface.parseLog(event);
+  const batchId = parsed.args.batchId.toString();
+  const url = `${window.location.origin}/search-product?batchId=${batchId}`;
+ 
+  // Cập nhật state mới
+  setQrModal({
+    show: true,
+    batchId: batchId,
+    url: url,
+  });
 }
 setFormData({
 
+
+
+
   batchCode: "",
+
+
+
 
   durianType: 0,
 
+
+
+
   origin: "",
+
+
+
 
   plantingAreaCode: "",
 
+
+
+
   packingHouseCode: "",
+
+
+
 
   exportMarket: "",
 
+
+
+
   quantity: ""
 
+
+
+
 });
+
+
+
 
 setSelectedCert("");
   } catch (error) {
@@ -193,6 +298,12 @@ setSelectedCert("");
     setLoading(false);
   }
 };
+
+
+
+
+
+
 
 
   const updateStatus = async (status) => {
@@ -207,6 +318,9 @@ setSelectedCert("");
     }
   };
 
+
+
+
   const markPacked = async () => {
     try {
       setLoading(true);
@@ -218,6 +332,9 @@ setSelectedCert("");
       setLoading(false);
     }
   };
+
+
+
 
   const updateTransport = async () => {
     try {
@@ -236,6 +353,9 @@ setSelectedCert("");
     }
   };
 
+
+
+
   const recallBatch = async () => {
     try {
       setLoading(true);
@@ -250,19 +370,31 @@ setSelectedCert("");
     }
   };
 
+
+
+
   // ==========================================
   // GIAO DIỆN LỘT XÁC PHONG CÁCH CYBERPUNK
   // ==========================================
   useEffect(() => {
 
+
+
+
     if (address) {
       loadCertificates();
     }
+
+
+
 
   }, [address]);
   return (
     <div style={styles.container}>
       {loading && <p style={styles.globalLoading}>Đang xử lý giao dịch dữ liệu lên Blockchain...</p>}
+
+
+
 
       {/* 1. DANH SÁCH BATCH */}
       <div style={styles.sectionBox}>
@@ -273,13 +405,22 @@ setSelectedCert("");
           </button>
         </div>
         <div style={styles.batchGridContainer}>
-          {myBatches.map((id) => (
-            <div key={id.toString()} style={styles.batchCard}>
-              <span style={{ color: "#a59cb0" }}>Batch ID:</span> <span style={styles.batchIdText}>{id.toString()}</span>
-            </div>
-          ))}
-        </div>
+  {myBatches.map((id) => (
+    <div
+      key={id.toString()}
+      style={{ ...styles.batchCard, cursor: "pointer" }}
+      onClick={() => handleBatchClick(id)}
+    >
+      <span style={{ color: "#a59cb0" }}>Batch ID:</span>
+      <span style={styles.batchIdText}>{id.toString()}</span>
+      <span style={{ marginLeft: "8px", fontSize: "14px", color: "#00ffff" }}>📱</span>
+    </div>
+  ))}
+</div>
       </div>
+
+
+
 
       {/* 2. TẠO LÔ HÀNG */}
       <div style={styles.sectionBox}>
@@ -301,9 +442,15 @@ setSelectedCert("");
   style={styles.selectField}
 >
 
+
+
+
   <option value="">
     Chọn chứng nhận
   </option>
+
+
+
 
   {
     certificates
@@ -314,13 +461,16 @@ setSelectedCert("");
       .map(
       (cert)=>(
 
+
+
+
         <option
           key={cert._id}
           value={cert._id}
         >
           {cert.certType} - {cert.certName}
         </option>
-      
+     
       )
     )
   }
@@ -328,13 +478,25 @@ setSelectedCert("");
 {
   selectedCert && (() => {
 
+
+
+
     const cert = certificates.find(
       c => c._id === selectedCert
     );
 
+
+
+
     if (!cert) return null;
 
+
+
+
     return (
+
+
+
 
       <div
         style={{
@@ -345,9 +507,15 @@ setSelectedCert("");
         }}
       >
 
+
+
+
         <p>
           <b>Loại chứng nhận:</b> {cert.certType}
         </p>
+
+
+
 
         <p>
           <b>Tên chứng nhận:</b> {cert.certName}
@@ -355,6 +523,9 @@ setSelectedCert("");
         <p>
           <b>Trạng thái:</b> {cert.status}
         </p>
+
+
+
 
         <a
           href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
@@ -368,12 +539,21 @@ setSelectedCert("");
           📄 Xem giấy chứng nhận
         </a>
 
+
+
+
       </div>
+
+
+
 
     );
 
+
+
+
   })()
-}         
+}        
           <select name="durianType" value={formData.durianType} onChange={handleChange} style={styles.selectField}>
             <option value={0}>Ri6</option>
             <option value={1}>Monthong</option>
@@ -386,6 +566,9 @@ setSelectedCert("");
           </button>
         </div>
       </div>
+
+
+
 
       {/* 3. UPDATE STATUS */}
       <div style={styles.sectionBox}>
@@ -406,6 +589,9 @@ setSelectedCert("");
         </div>
       </div>
 
+
+
+
       {/* 4. MARK PACKED */}
       <div style={styles.sectionBox}>
         <h3 style={{ ...styles.sectionTitle, color: styles.M_NEON_HONG }}>Mark Packed</h3>
@@ -422,6 +608,9 @@ setSelectedCert("");
         </div>
       </div>
 
+
+
+
       {/* 5. UPDATE TRANSPORT */}
       <div style={styles.sectionBox}>
         <h3 style={{ ...styles.sectionTitle, color: styles.M_NEON_XANH }}>Update Transport</h3>
@@ -437,6 +626,9 @@ setSelectedCert("");
         </div>
       </div>
 
+
+
+
       {/* 6. RECALL BATCH */}
       <div style={styles.sectionBox}>
         <h3 style={{ ...styles.sectionTitle, color: "#ff3b30" }}>Recall Batch (Thu hồi lô hàng)</h3>
@@ -450,121 +642,84 @@ setSelectedCert("");
           </button>
         </div>
       </div>
-     {showQR && (
-
-        <div
-
-          style={{
-
-          position:"fixed",
-
-          top:0,
-
-          left:0,
-
-          width:"100%",
-
-          height:"100%",
-
-          background:"rgba(0,0,0,0.75)",
-
-          display:"flex",
-
-          justifyContent:"center",
-
-          alignItems:"center",
-
-          zIndex:9999
-
+     {qrModal.show && (
+  <div style={styles.modalOverlay}>
+    <div style={styles.modalContent}>
+      <h2 style={{ marginBottom: "15px", color: "#000" }}>
+        📱 QR Code - Batch {qrModal.batchId}
+      </h2>
+     
+      <QRCodeSVG
+        value={qrModal.url}
+        size={220}
+        style={{ margin: "0 auto" }}
+      />
+     
+      <p style={{
+        fontSize: "12px",
+        marginTop: "15px",
+        wordBreak: "break-word",
+        background: "#f5f5f5",
+        padding: "10px",
+        borderRadius: "8px"
+      }}>
+        {qrModal.url}
+      </p>
+     
+      <div style={{
+        display: "flex",
+        gap: "10px",
+        justifyContent: "center",
+        marginTop: "20px"
+      }}>
+        <button
+          onClick={() => {
+            // Tạo link tải QR code
+            const canvas = document.querySelector("canvas");
+            if (canvas) {
+              const link = document.createElement("a");
+              link.download = `QR-Batch-${qrModal.batchId}.png`;
+              link.href = canvas.toDataURL("image/png");
+              link.click();
+            }
           }}
-
+          style={{
+            padding: "10px 20px",
+            cursor: "pointer",
+            background: "#28a745",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "16px"
+          }}
         >
-
-          <div
-
-            style={{
-
-            background:"#fff",
-
-            padding:"30px",
-
-            borderRadius:"20px",
-
-            width:"350px",
-
-            textAlign:"center",
-
-            color:"#000"
-
-            }}
-          >
-
-            <h2>
-
-              Tạo lô hàng thành công
-
-            </h2>
-
-            <p>
-
-              Batch ID: <b>{newBatchId}</b>
-
-            </p>
-
-            <QRCodeSVG
-
-              value={qrUrl}
-
-              size={220}
-              
-            />
-
-            <p
-
-              style={{
-
-                fontSize:"12px",
-
-                marginTop:"15px",
-
-                wordBreak:"break-word"
-
-              }}
-
-            >
-
-              {qrUrl}
-
-            </p>
-
-            <button
-
-              onClick={()=>setShowQR(false)}
-
-              style={{
-
-                marginTop:"20px",
-
-                padding:"10px 20px",
-
-                cursor:"pointer"
-
-              }}
-
-            >
-
-              Đóng
-
-            </button>
-
-          </div>
-
-        </div>
-
-    )} 
+          ⬇️ Tải QR
+        </button>
+       
+        <button
+          onClick={() => setQrModal({ show: false, batchId: "", url: "" })}
+          style={{
+            padding: "10px 20px",
+            cursor: "pointer",
+            background: "#dc3545",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "16px"
+          }}
+        >
+          ✖ Đóng
+        </button>
+      </div>
+    </div>
   </div>
-  );
-}
+)}
+   </div>      
+  );          
+}    
+
+
+
 
 // ==========================================
 // HỆ THỐNG CONFIG CHUẨN TRUNG TÂM PHÁT SÁNG
@@ -574,6 +729,9 @@ const styles = {
   M_NEON_TIM: "#f9f5fb",
   M_NEON_HONG: "#fcfcfc",
   M_NEON_VANG: "#ffcc00",
+
+
+
 
   container: {
     display: "flex",
@@ -589,10 +747,10 @@ const styles = {
     textAlign: "center",
     margin: "10px 0 20px 0",
   },
-  // HỘP CHỨA VIỀN TÍM BO 
+  // HỘP CHỨA VIỀN TÍM BO
   sectionBox: {
     background: "rgba(13, 2, 26, 0.4)",
-    border: "2px solid #f5f3f6", 
+    border: "2px solid #f5f3f6",
     borderRadius: "24px",
     padding: "30px",
     boxShadow: "0 0 20px rgba(239, 231, 243, 0.2)",
@@ -634,30 +792,30 @@ const styles = {
     height: "46px",
     padding: "0px 20px",
     background: "rgba(13, 2, 26, 0.6)",
-    border: "1px solid #efeaf2",         
+    border: "1px solid #efeaf2",        
     borderRadius: "50px",                
-    color: "#ffffff",                       
-    fontSize: "19px",                       
+    color: "#ffffff",                      
+    fontSize: "19px",                      
     outline: "none",
     fontFamily: "'Smooch Sans', sans-serif",
     letterSpacing: "1px",
     boxShadow: "inset 0 0 10px rgba(173, 34, 238, 0.2)",
     boxSizing: "border-box",
     display: "flex",
-    alignItems: "center",                   
+    alignItems: "center",                  
     lineHeight: "normal",        
     paddingTop: "4px",
   },
-  // THIẾT KẾ Ô SELECT KHUNG TRÒN VIÊN NHỘNG 
+  // THIẾT KẾ Ô SELECT KHUNG TRÒN VIÊN NHỘNG
   selectField: {
     width: "100%",
     height: "46px",
     padding: "0px 20px",
     background: "#0d021a",
-    border: "1px solid #efeaf2",         
+    border: "1px solid #efeaf2",        
     borderRadius: "50px",                
-    color: "#ebf0ef",                       
-    fontSize: "20px",                       
+    color: "#ebf0ef",                      
+    fontSize: "20px",                      
     outline: "none",
     fontFamily: "'Smooch Sans', sans-serif",
     boxSizing: "border-box",
@@ -671,14 +829,14 @@ const styles = {
     width: "100%",
     marginTop: "15px"
   },
-  // NÚT BẤM CĂN GIỮA TUYỆT ĐỐI, THU NHỎ GỌN THEO CHỮ 
+  // NÚT BẤM CĂN GIỮA TUYỆT ĐỐI, THU NHỎ GỌN THEO CHỮ
   btn: {
     height: "45px",
     width: "fit-content",                  
     minWidth: "120px",
     background: "transparent",
     borderRadius: "50px",                
-    fontSize: "20px",                       
+    fontSize: "20px",                      
     fontWeight: "bold",
     cursor: "pointer",
     fontFamily: "'Smooch Sans', sans-serif",
@@ -686,9 +844,9 @@ const styles = {
     transition: "all 0.3s ease",
     boxSizing: "border-box",
     display: "inline-flex",
-    justifyContent: "center",               
-    alignItems: "center",                   
-    lineHeight: "normal",                   
+    justifyContent: "center",              
+    alignItems: "center",                  
+    lineHeight: "normal",                  
     paddingTop: "4px",
     paddingLeft: "25px",
     paddingRight: "25px"
@@ -700,7 +858,10 @@ const styles = {
   btnYellow: { color: "#ffcc00", border: "2px solid #ffcc00", background: "rgba(255, 204, 0, 0.05)" },
   btnWarning: { color: "#f50808", border: "2px solid #f50f03", background: "rgba(255, 59, 48, 0.05)" },
 
-  // CARD HIỂN THỊ DANH SÁCH BATCH ID 
+
+
+
+  // CARD HIỂN THỊ DANH SÁCH BATCH ID
   batchGridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
@@ -722,5 +883,33 @@ const styles = {
   batchIdText: {
     color: "#f5f8f7",
     fontWeight: "bold"
+  },
+   modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.8)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999
+  },
+ 
+  modalContent: {
+    background: "#ffffff",
+    padding: "35px 30px",
+    borderRadius: "20px",
+    width: "380px",
+    maxWidth: "90%",
+    textAlign: "center",
+    color: "#000000",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+    animation: "fadeIn 0.3s ease"
   }
 };
+
+
+

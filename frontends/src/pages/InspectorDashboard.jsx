@@ -1,50 +1,103 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "../context/Web3Context";
 
+
+
+
 export default function CertifyBatch() {
   const { contract, address } = useWeb3();
+  const viewMode = localStorage.getItem("viewMode");
+const isAdminView = viewMode === "ADMIN_VIEW";
   const [loading, setLoading] = useState(false);
+
+
+
 
   // State quản lý chuẩn xác dữ liệu nhập vào từ ô input
   const [certificates,setCertificates]=useState([]);
   const [loadingId,setLoadingId]=useState(null);
   const loadCertificates = async()=>{
 
+
+
+
     try{
+
+
+
 
       const res=await fetch(
 
+
+
+
           "http://localhost:3002/api/certificates/certificates"
+
+
+
 
       );
 
+
+
+
       const data=await res.json();
+
+
+
 
       setCertificates(data);
 
+
+
+
     }
-  
+ 
     catch(err){
+
+
+
 
       console.log(err);
 
+
+
+
     }
 
+
+
+
   };
-  
+ 
   useEffect(() => {
       loadCertificates();
       }, []);
       const approveCertificate = async (cert) => {
 
+
+
+
       try{
 
+
+
+
         setLoadingId(cert._id);
+
+
+
 
         // ghi blockchain
         const tx = await contract.certifyBatch(cert.batchId);
 
+
+
+
         await tx.wait();
+
+
+
 
         // cập nhật mongodb
         await fetch(
@@ -61,129 +114,294 @@ export default function CertifyBatch() {
           }
         );
 
+
+
+
         alert("Đã duyệt lô hàng");
+
+
+
 
         loadCertificates();
 
+
+
+
       }catch(err){
+
+
+
 
         alert(err.reason || err.message);
 
+
+
+
       }finally{
+
+
+
 
         setLoadingId(null);
 
+
+
+
       }
+
+
+
 
     };
       const rejectCertificate = async(cert)=>{
 
+
+
+
       const reason =
         prompt("Nhập lý do từ chối");
 
+
+
+
       if(!reason) return;
+
+
+
 
       try{
 
+
+
+
         setLoadingId(cert._id);
+
+
+
 
         await fetch(
 
+
+
+
           `http://localhost:3002/api/certificates/${cert._id}/reject`,
+
+
+
 
           {
 
+
+
+
             method:"PUT",
+
+
+
 
             headers:{
               "Content-Type":"application/json"
             },
 
+
+
+
             body:JSON.stringify({
+
+
+
 
               inspectorWallet:
                 (address.toLowerCase()),
 
+
+
+
               reason
+
+
+
 
             })
 
+
+
+
           }
+
+
+
 
         );
 
+
+
+
         alert("Đã từ chối");
+
+
+
 
         loadCertificates();
 
+
+
+
       }catch(err){
+
+
+
 
         alert(err.reason || err.message);
 
+
+
+
       }finally{
+
+
+
 
         setLoadingId(null);
 
+
+
+
       }
+
+
+
 
 };
 
+
+
+
   return (
-    <div style={styles.container}>
+  <div
+    style={{
+      ...styles.container,
+      pointerEvents: isAdminView ? "none" : "auto",
+      opacity: isAdminView ? 0.7 : 1,
+    }}
+  >
       {loading && <p style={styles.globalLoading}>Đang xác thực chứng nhận lên Blockchain...</p>}
       <div style={styles.sectionBox}>
+
+
+
 
       <h3 style={styles.sectionTitle}>
       Danh sách chứng nhận
       </h3>
 
+
+
+
       <div style={styles.sectionBox}>
+
+
+
 
       <h3 style={styles.sectionTitle}>
       Chờ kiểm định
       </h3>
       {
 
+
+
+
       certificates
       .filter(cert=>cert.status==="PENDING")
-      
+     
+
+
+
 
       .map(cert=>(
 
+
+
+
       <div
+
+
+
 
       key={cert._id}
 
+
+
+
       style={{
+
+
+
 
       border:"1px solid #555",
 
+
+
+
       padding:"15px",
+
+
+
 
       marginBottom:"15px",
 
+
+
+
       borderRadius:"10px"
+
+
+
 
       }}
 
+
+
+
       >
+
+
+
 
       <p><b>Batch:</b> {cert.batchCode}</p>
 
+
+
+
       <p><b>Farmer:</b> {cert.farmerWallet}</p>
+
+
+
 
       <p><b>Loại:</b> {cert.certType}</p>
       <p><b>Batch ID:</b> {cert.batchId}</p>
 
+
+
+
       <p><b>Batch Code:</b> {cert.batchCode}</p>
+
+
+
 
       <p><b>Ngày cấp:</b>
       {new Date(cert.issueDate).toLocaleDateString()}
       </p>
 
+
+
+
       <p><b>Hết hạn:</b>
       {new Date(cert.expiryDate).toLocaleDateString()}
       </p>
+
+
+
 
       <a
       href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
@@ -193,7 +411,13 @@ export default function CertifyBatch() {
       Xem chứng nhận
       </a>
 
+
+
+
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+
+
+
 
     <button
     onClick={()=>approveCertificate(cert)}
@@ -201,9 +425,18 @@ export default function CertifyBatch() {
     style={styles.btn}
     >
 
+
+
+
     Duyệt
 
+
+
+
     </button>
+
+
+
 
     <button
     onClick={()=>rejectCertificate(cert)}
@@ -211,27 +444,51 @@ export default function CertifyBatch() {
     style={styles.btn}
     >
 
+
+
+
     Từ chối
+
+
+
 
     </button>
 
-</div>
+
+
 
 </div>
-    
+
+
+
+
+</div>
+   
       ))
+
+
+
 
       }
       <div style={styles.sectionBox}>
+
+
+
 
       <h3 style={styles.sectionTitle}>
       Đã duyệt
       </h3>
 
+
+
+
       {
       certificates
       .filter(cert=>cert.status==="APPROVED")
       .map(cert=>(
+
+
+
 
       <div
       key={cert._id}
@@ -245,16 +502,31 @@ export default function CertifyBatch() {
       <div>
       <p><b>Batch:</b> {cert.batchCode}</p>
 
+
+
+
       <p><b>Farmer:</b> {cert.farmerWallet}</p>
 
+
+
+
       <p><b>Loại:</b> {cert.certType}</p>
+
+
+
 
       <p style={{color:"#00ff66"}}>
       <p><b>Batch ID:</b> {cert.batchId}</p>
 
+
+
+
       <p><b>Ngày cấp:</b>
       {new Date(cert.issueDate).toLocaleDateString()}
       </p>
+
+
+
 
       <p><b>Hết hạn:</b>
       {new Date(cert.expiryDate).toLocaleDateString()}
@@ -268,22 +540,40 @@ export default function CertifyBatch() {
       </a>
       Đã duyệt
 
+
+
+
       </p>
       </div>
       </div>
 
+
+
+
       ))
 
+
+
+
       }
+
+
+
 
 </div>
       </div>
       </div>
     </div>
-    
+   
  );
 }
-          
+         
+
+
+
+
+
+
 
 
 // ==========================================
@@ -306,7 +596,7 @@ const styles = {
   },
   sectionBox: {
     background: "rgba(13, 2, 26, 0.4)",
-    border: "2px solid #f5f3f6", 
+    border: "2px solid #f5f3f6",
     borderRadius: "24px",
     padding: "30px",
     boxShadow: "0 0 20px rgba(239, 231, 243, 0.2)",
@@ -335,10 +625,10 @@ const styles = {
     height: "46px",
     padding: "0px 20px",
     background: "rgba(13, 2, 26, 0.6)",
-    border: "1px solid #efeaf2",         
+    border: "1px solid #efeaf2",        
     borderRadius: "50px",                
-    color: "#ffffff",                       
-    fontSize: "19px",                       
+    color: "#ffffff",                      
+    fontSize: "19px",                      
     outline: "none",
     fontFamily: "'Smooch Sans', sans-serif",
     letterSpacing: "1px",
@@ -350,7 +640,7 @@ const styles = {
     height: "45px",
     background: "transparent",
     borderRadius: "50px",                
-    fontSize: "20px",                       
+    fontSize: "20px",                      
     fontWeight: "bold",
     cursor: "pointer",
     fontFamily: "'Smooch Sans', sans-serif",
@@ -358,10 +648,15 @@ const styles = {
     transition: "all 0.3s ease",
     boxSizing: "border-box",
     display: "inline-flex",
-    justifyContent: "center",               
-    alignItems: "center",                   
+    justifyContent: "center",              
+    alignItems: "center",                  
     color: "#79f485", // Viền xanh lá cyberpunk
-    border: "2px solid #79f485", 
+    border: "2px solid #79f485",
     background: "rgba(0, 255, 204, 0.05)"
   }
 };
+
+
+
+
+
