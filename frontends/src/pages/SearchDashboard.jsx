@@ -160,7 +160,7 @@ useEffect(() => {
         alert("Thiết bị không hỗ trợ camera.");
 
 
-    }
+    
 
 
 };
@@ -835,4 +835,4 @@ style={{
 
 
 
-
+  }
