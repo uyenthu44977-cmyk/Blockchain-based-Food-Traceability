@@ -1,3 +1,4 @@
+import CertificateManagement from "../components/CertificateManagement";
 import { useWeb3 } from "../context/Web3Context";
 import RoleManagement from "../components/RoleManagement";
 
@@ -54,6 +55,21 @@ export default function AdminDashboard() {
             <RoleManagement />
           </div>
         </section>
+        <section style={styles.sectionBox}>
+        <div style={styles.sectionHeader}>
+          <h2 style={styles.sectionTitle}>
+            CERTIFICATE MANAGEMENT
+          </h2>
+        </div>
+
+        <p style={styles.sectionDesc}>
+          Upload và quản lý chứng nhận của Farmer
+        </p>
+
+        <div style={styles.componentWrapper}>
+          <CertificateManagement />
+        </div>
+      </section>
       </div>
     </div>
   );

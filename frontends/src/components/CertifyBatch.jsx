@@ -122,7 +122,7 @@ export default function CertifyBatch() {
               
               {/* HIỂN THỊ FILE ẢNH CHỨNG NHẬN CỨNG HOẶC ĐỘNG TỪ NODEJS BACKEND */}
               <img 
-                src="http://localhost:5000/uploads/monthong_certificate.jpg" 
+                src="http://localhost:3000/uploads/monthong_certificate.jpg" 
                 alt="VietGAP Certificate" 
                 style={styles.certificateImage}
                 onError={(e) => {

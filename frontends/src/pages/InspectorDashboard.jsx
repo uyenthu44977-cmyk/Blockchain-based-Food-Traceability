@@ -1,40 +1,252 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWeb3 } from "../context/Web3Context";
 
 export default function CertifyBatch() {
-  const { contract } = useWeb3();
+  const { contract, address } = useWeb3();
   const [loading, setLoading] = useState(false);
-  
+  const [batchId,setBatchId]=useState("");
   // State quản lý chuẩn xác dữ liệu nhập vào từ ô input
-  const [batchId, setBatchId] = useState("");
+  const [certificates,setCertificates]=useState([]);
+  const [loadingId,setLoadingId]=useState(null);
+  const loadCertificates = async()=>{
 
-  const handleCertify = async () => {
-    // Kiểm tra và cắt bỏ khoảng trắng dư thừa
-    if (!batchId.trim()) {
-      alert("Nhập Batch ID");
-      return;
+    try{
+
+      const res=await fetch(
+
+          "http://localhost:3002/api/certificates/certificates"
+
+      );
+
+      const data=await res.json();
+
+      setCertificates(data);
+
+    }
+  
+    catch(err){
+
+      console.log(err);
+
     }
 
-    try {
-      setLoading(true);
-      
-      // TRUYỀN TRỰC TIẾP CHUỖI "SR2026201" - KHÔNG ÉP KIỂU NUMBER KHÊN BỊ NaN
-      const tx = await contract.certifyBatch(batchId);      
-      await tx.wait();
-      
-      alert("Chứng nhận lô hàng thành công!");
-      setBatchId(""); // Xóa sạch ô nhập sau khi thành công
-    } catch (error) {
-      alert(error.reason || error.message);
-    } finally {
-      setLoading(false);
-    }
   };
+  
+  useEffect(() => {
+      loadCertificates();
+      }, []);
+      const approveCertificate = async (cert) => {
+
+      try{
+
+        setLoadingId(cert._id);
+
+        // ghi blockchain
+        const tx = await contract.certifyBatch(cert.batchId);
+
+        await tx.wait();
+
+        // cập nhật mongodb
+        await fetch(
+          `http://localhost:3002/api/certificates/${cert._id}/approve`,
+          {
+            method:"PUT",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+              inspectorWallet:
+                (address.toLowerCase())
+            })
+          }
+        );
+
+        alert("Đã duyệt lô hàng");
+
+        loadCertificates();
+
+      }catch(err){
+
+        alert(err.reason || err.message);
+
+      }finally{
+
+        setLoadingId(null);
+
+      }
+
+    };
+      const rejectCertificate = async(cert)=>{
+
+      const reason =
+        prompt("Nhập lý do từ chối");
+
+      if(!reason) return;
+
+      try{
+
+        setLoadingId(cert._id);
+
+        await fetch(
+
+          `http://localhost:3002/api/certificates/${cert._id}/reject`,
+
+          {
+
+            method:"PUT",
+
+            headers:{
+              "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+
+              inspectorWallet:
+                (address.toLowerCase()),
+
+              reason
+
+            })
+
+          }
+
+        );
+
+        alert("Đã từ chối");
+
+        loadCertificates();
+
+      }catch(err){
+
+        alert(err.message);
+
+      }finally{
+
+        setLoadingId(null);
+
+      }
+
+};
+      
+      const handleCertify = async () => {
+
+        if(!batchId.trim()){
+
+          alert("Nhập Batch ID");
+
+          return;
+
+        }
+
+        try{
+
+          setLoading(true);
+
+          const tx =
+            await contract.certifyBatch(batchId);
+
+          await tx.wait();
+
+          alert("Chứng nhận thành công");
+
+          setBatchId("");
+
+        }catch(err){
+
+          alert(err.reason || err.message);
+
+        }finally{
+
+          setLoading(false);
+
+        }
+
+      };
+
+      };
 
   return (
     <div style={styles.container}>
       {loading && <p style={styles.globalLoading}>Đang xác thực chứng nhận lên Blockchain...</p>}
+      <div style={styles.sectionBox}>
 
+      <h3 style={styles.sectionTitle}>
+      Danh sách chứng nhận
+      </h3>
+
+      <div style={styles.sectionBox}>
+
+<h3 style={styles.sectionTitle}>
+Đã duyệt
+</h3>
+
+
+      {
+
+      certificates
+      .filter(cert=>cert.status==="PENDING")
+      .filter(cert=>cert.status==="APPROVED")
+
+      .map(cert=>(
+
+      <div
+
+      key={cert._id}
+
+      style={{
+
+      border:"1px solid #555",
+
+      padding:"15px",
+
+      marginBottom:"15px",
+
+      borderRadius:"10px"
+
+      }}
+
+      >
+
+      <p><b>Batch:</b> {cert.batchCode}</p>
+
+      <p><b>Farmer:</b> {cert.farmerWallet}</p>
+
+      <p><b>Loại:</b> {cert.certType}</p>
+      <p><b>Batch ID:</b> {cert.batchId}</p>
+
+      <p><b>Batch Code:</b> {cert.batchCode}</p>
+
+      <p><b>Ngày cấp:</b>
+      {new Date(cert.issueDate).toLocaleDateString()}
+      </p>
+
+      <p><b>Hết hạn:</b>
+      {new Date(cert.expiryDate).toLocaleDateString()}
+      </p>
+
+      <a
+      href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
+      target="_blank"
+      rel="noreferrer"
+      >
+      Xem chứng nhận
+      </a>
+
+      <p style={{color:"#00ff66"}}>
+
+      Đã duyệt
+
+      </p>
+
+      </div>
+
+      ))
+
+      }
+
+</div>
+
+      </div>
       <div style={styles.sectionBox}>
         <h3 style={styles.sectionTitle}>Chứng nhận lô hàng</h3>
         

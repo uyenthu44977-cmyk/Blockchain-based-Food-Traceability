@@ -1,3 +1,5 @@
+const certificateRoutes =
+require("./routes/certificateRoutes");
 // Khai báo thư viện express - dùng để tạo server và các API
 const express = require('express');
 
@@ -14,6 +16,14 @@ const { ethers } = require('ethers');
 // Đọc file .env để lấy các biến môi trường như MONGODB_URI, API_KEY...
 // Phải gọi dòng này trước khi dùng process.env ở bất kỳ đâu
 require('dotenv').config();
+require("dotenv").config();
+
+const dns = require("dns");
+
+dns.setServers([
+  "8.8.8.8",
+  "8.8.4.4"
+]);
 
 // Tạo ứng dụng Express, lưu vào biến "app" để dùng xuyên suốt file
 const app = express();
@@ -24,7 +34,10 @@ app.use(cors());
 // Bật tính năng đọc dữ liệu JSON từ body của request
 // Không có dòng này thì req.body sẽ bị undefined
 app.use(express.json());
-
+app.use((req, res, next) => {
+  console.log(req.method, req.url);
+  next();
+});
 // ============================================
 // VIỆC 24: Hàm kết nối MongoDB Atlas
 // ============================================
@@ -36,6 +49,7 @@ const connectDB = async () => {
         // Gọi mongoose.connect để kết nối tới MongoDB Atlas
         // process.env.MONGODB_URI là đường link lấy từ file .env
         // await = chờ kết nối xong mới chạy dòng tiếp theo
+        console.log("URI =", process.env.MONGODB_URI);
         await mongoose.connect(process.env.MONGODB_URI);
 
         // In ra terminal nếu kết nối thành công
@@ -320,7 +334,8 @@ app.post('/api/trace/scan', async (req, res) => {
 // Lấy số cổng từ biến môi trường PORT trong file .env
 // Nếu không có thì dùng cổng 5000 làm mặc định
 // Khi deploy lên Render, Render tự cấp cổng qua biến PORT
-const PORT = process.env.PORT || 5000;
+app.use("/api/certificates", certificateRoutes);
+const PORT = process.env.PORT || 3002;
 
 // Bắt đầu lắng nghe request trên cổng PORT
 // Khi server sẵn sàng thì in ra dòng thông báo trong terminal

@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  useState,
+  useEffect
+} from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useWeb3 } from "../context/Web3Context";
 
 export default function BatchManagement() {
@@ -9,18 +13,26 @@ export default function BatchManagement() {
   // ==========================================
   const [loading, setLoading] = useState(false);
   const [myBatches, setMyBatches] = useState([]);
+  const [certificates,
+setCertificates] =
+useState([]);
 
-  const [formData, setFormData] = useState({
-    batchCode: "",
-    durianType: 0,
-    origin: "",
-    plantingAreaCode: "",
-    packingHouseCode: "",
-    exportMarket: "",
-    certHash: "",
-    certType: "",
-    quantity: ""
-  });
+const [selectedCert,
+setSelectedCert] =
+useState("");
+const [showQR, setShowQR] = useState(false);
+const [qrUrl, setQrUrl] = useState("");
+const [newBatchId, setNewBatchId] = useState("");
+  const [formData, setFormData] =
+useState({
+  batchCode: "",
+  durianType: 0,
+  origin: "",
+  plantingAreaCode: "",
+  packingHouseCode: "",
+  exportMarket: "",
+  quantity: ""
+});
 
   const [statusBatchId, setStatusBatchId] = useState("");
   const [packedBatchId, setPackedBatchId] = useState("");
@@ -59,29 +71,115 @@ export default function BatchManagement() {
       console.log(error);
     }
   };
+  const loadCertificates = async () => {
 
-  const createBatch = async () => {
+    if (!address) return;
+
     try {
-      setLoading(true);
-      const tx = await contract.createBatch(
-        formData.batchCode,
-        Number(formData.durianType),
-        formData.origin,
-        formData.plantingAreaCode,
-        formData.packingHouseCode,
-        formData.exportMarket,
-        formData.certHash,
-        formData.certType,
-        Number(formData.quantity)
-      );
-      await tx.wait();
-      alert("Tạo lô hàng thành công");
-    } catch (error) {
-      alert(error.reason || error.message);
-    } finally {
-      setLoading(false);
+
+    const res = await fetch(
+      `http://localhost:3002/api/certificates/farmer/${address}`
+    );
+
+    const data = await res.json();
+
+    setCertificates(data);
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+const createBatch = async () => {
+  try {
+    const cert = certificates.find(
+      (item) => item._id === selectedCert
+    );
+
+    if (!cert) {
+      alert("Vui lòng chọn chứng nhận");
+      return;
     }
-  };
+
+    setLoading(true);
+
+    const tx = await contract.createBatch(
+      formData.batchCode,
+      Number(formData.durianType),
+      formData.origin,
+      formData.plantingAreaCode,
+      formData.packingHouseCode,
+      formData.exportMarket,
+      cert.certHash,
+      cert.certType,
+      Number(formData.quantity)
+    );
+
+    const receipt = await tx.wait();
+
+// Tìm event BatchCreated
+const event = receipt.logs.find((log) => {
+
+  try {
+
+    const parsed =
+      contract.interface.parseLog(log);
+
+    return parsed.name === "BatchCreated";
+
+  } catch {
+
+    return false;
+
+  }
+
+});
+
+if (event) {
+
+  const parsed =
+    contract.interface.parseLog(event);
+
+  const batchId =
+    parsed.args.batchId.toString();
+
+  setNewBatchId(batchId);
+
+  const url =
+    `${window.location.origin}/search-product?batchId=${batchId}`;
+
+  setQrUrl(url);
+
+  setShowQR(true); 
+}
+setFormData({
+
+  batchCode: "",
+
+  durianType: 0,
+
+  origin: "",
+
+  plantingAreaCode: "",
+
+  packingHouseCode: "",
+
+  exportMarket: "",
+
+  quantity: ""
+
+});
+
+setSelectedCert("");
+  } catch (error) {
+    alert(error.reason || error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const updateStatus = async (status) => {
     try {
@@ -141,6 +239,13 @@ export default function BatchManagement() {
   // ==========================================
   // GIAO DIỆN LỘT XÁC PHONG CÁCH CYBERPUNK
   // ==========================================
+  useEffect(() => {
+
+    if (address) {
+      loadCertificates();
+    }
+
+  }, [address]);
   return (
     <div style={styles.container}>
       {loading && <p style={styles.globalLoading}>Đang xử lý giao dịch dữ liệu lên Blockchain...</p>}
@@ -166,16 +271,88 @@ export default function BatchManagement() {
       <div style={styles.sectionBox}>
         <h3 style={{ ...styles.sectionTitle, color: styles.M_NEON_XANH }}>Tạo lô hàng mới</h3>
         <div style={styles.inputGrid}>
-          <input name="batchCode" placeholder="Batch Code" onChange={handleChange} style={styles.inputField} />
-          <input name="origin" placeholder="Origin" onChange={handleChange} style={styles.inputField} />
-          <input name="plantingAreaCode" placeholder="Planting Area" onChange={handleChange} style={styles.inputField} />
-          <input name="packingHouseCode" placeholder="Packing House" onChange={handleChange} style={styles.inputField} />
-          <input name="exportMarket" placeholder="Export Market" onChange={handleChange} style={styles.inputField} />
-          <input name="certHash" placeholder="Cert Hash" onChange={handleChange} style={styles.inputField} />
-          <input name="certType" placeholder="Cert Type" onChange={handleChange} style={styles.inputField} />
-          <input name="quantity" placeholder="Quantity" onChange={handleChange} style={styles.inputField} />
-          
-          <select name="durianType" onChange={handleChange} style={styles.selectField}>
+          <input name="batchCode" value={formData.batchCode} placeholder="Batch Code" onChange={handleChange} style={styles.inputField} />
+          <input name="origin" value={formData.origin} placeholder="Origin" onChange={handleChange} style={styles.inputField} />
+          <input name="plantingAreaCode" value={formData.plantingAreaCode} placeholder="Planting Area" onChange={handleChange} style={styles.inputField} />
+          <input name="packingHouseCode" value={formData.packingHouseCode} placeholder="Packing House" onChange={handleChange} style={styles.inputField} />
+          <input name="exportMarket" value={formData.exportMarket} placeholder="Export Market" onChange={handleChange} style={styles.inputField} />
+          <input name="quantity" value={formData.quantity} placeholder="Quantity" onChange={handleChange} style={styles.inputField} />
+          <select
+  value={selectedCert}
+  onChange={(e) =>
+    setSelectedCert(
+      e.target.value
+    )
+  }
+  style={styles.selectField}
+>
+
+  <option value="">
+    Chọn chứng nhận
+  </option>
+
+  {
+    certificates.map(
+      (cert) => (
+
+        <option
+          key={cert._id}
+          value={cert._id}
+        >
+          {cert.certType} - {cert.certName}
+        </option>
+      
+      )
+    )
+  }
+</select>
+{
+  selectedCert && (() => {
+
+    const cert = certificates.find(
+      c => c._id === selectedCert
+    );
+
+    if (!cert) return null;
+
+    return (
+
+      <div
+        style={{
+          border: "1px solid #ffffff",
+          borderRadius: "12px",
+          padding: "12px",
+          color: "#fff"
+        }}
+      >
+
+        <p>
+          <b>Loại chứng nhận:</b> {cert.certType}
+        </p>
+
+        <p>
+          <b>Tên chứng nhận:</b> {cert.certName}
+        </p>
+
+        <a
+          href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: "#00ffff",
+            textDecoration: "none"
+          }}
+        >
+          📄 Xem giấy chứng nhận
+        </a>
+
+      </div>
+
+    );
+
+  })()
+}         
+          <select name="durianType" value={formData.durianType} onChange={handleChange} style={styles.selectField}>
             <option value={0}>Ri6</option>
             <option value={1}>Monthong</option>
             <option value={2}>Musang King</option>
@@ -251,7 +428,119 @@ export default function BatchManagement() {
           </button>
         </div>
       </div>
-    </div>
+     {showQR && (
+
+        <div
+
+          style={{
+
+          position:"fixed",
+
+          top:0,
+
+          left:0,
+
+          width:"100%",
+
+          height:"100%",
+
+          background:"rgba(0,0,0,0.75)",
+
+          display:"flex",
+
+          justifyContent:"center",
+
+          alignItems:"center",
+
+          zIndex:9999
+
+          }}
+
+        >
+
+          <div
+
+            style={{
+
+            background:"#fff",
+
+            padding:"30px",
+
+            borderRadius:"20px",
+
+            width:"350px",
+
+            textAlign:"center",
+
+            color:"#000"
+
+            }}
+          >
+
+            <h2>
+
+              Tạo lô hàng thành công
+
+            </h2>
+
+            <p>
+
+              Batch ID: <b>{newBatchId}</b>
+
+            </p>
+
+            <QRCodeSVG
+
+              value={qrUrl}
+
+              size={220}
+              
+            />
+
+            <p
+
+              style={{
+
+                fontSize:"12px",
+
+                marginTop:"15px",
+
+                wordBreak:"break-word"
+
+              }}
+
+            >
+
+              {qrUrl}
+
+            </p>
+
+            <button
+
+              onClick={()=>setShowQR(false)}
+
+              style={{
+
+                marginTop:"20px",
+
+                padding:"10px 20px",
+
+                cursor:"pointer"
+
+              }}
+
+            >
+
+              Đóng
+
+            </button>
+
+          </div>
+
+        </div>
+
+    )} 
+  </div>
   );
 }
 

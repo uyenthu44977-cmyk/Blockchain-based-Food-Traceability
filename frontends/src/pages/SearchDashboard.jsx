@@ -1,87 +1,116 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useWeb3 } from "../context/Web3Context";
 
 export default function SearchDashboard() {
+  const { contract } = useWeb3();
 
-  const [batchId, setBatchId] = useState("");
+  const [searchParams] = useSearchParams();
+
+  const qrBatchId =
+    searchParams.get("batchId");
+  const [batchId, setBatchId] =
+    useState(qrBatchId || "");
   const [product, setProduct] = useState(null);
+  const [history, setHistory] = useState([]);
 
+  const [transportHistory, setTransportHistory] = useState([]);
 
-  const searchProduct = () => {
+  const [safeInfo, setSafeInfo] = useState(null);
 
-    // Demo data
-    // Sau này thay bằng smart contract
+  const searchProduct = async (id = batchId) => {
 
-    if(batchId === "BATCH001"){
+    try{
 
-      setProduct({
+        const result =
+          await contract.getBatchFullInfo(id);
 
-        name: "Organic Mango",
+        const batch = result[0];
+        const transports = result[1];
+        const recallReason = result[2];
 
-        origin: "Đồng Nai, Việt Nam",
+        const histories =
+          await contract.getHistory(id);
 
-        harvest: "10/06/2026",
+        const safe =
+          await contract.isProductSafe(id);
 
-        status: "An toàn",
+        setHistory(histories);
 
-        image:
-          "https://images.unsplash.com/photo-1553279768-865429fa0078",
+        setTransportHistory(transports);
 
+        setSafeInfo({
 
-        certificates:[
-          "VietGAP",
-          "Organic Certificate"
-        ],
+              safe: safe[0],
 
+              message: safe[1]
 
-        timeline:[
+        });
+        setProduct({
 
-          {
-            date:"01/06/2026",
-            title:"Gieo trồng",
-            desc:"Trang trại ABC"
-          },
+          batchId: id,
 
-          {
-            date:"10/06/2026",
-            title:"Thu hoạch",
-            desc:"Đã ghi nhận blockchain"
-          },
+          batchCode: batch.batchCode,
 
-          {
-            date:"12/06/2026",
-            title:"Vận chuyển",
-            desc:"Nhiệt độ ổn định"
-          },
+          origin: batch.origin,
 
-          {
-            date:"15/06/2026",
-            title:"Đến cửa hàng",
-            desc:"Sẵn sàng bán"
-          }
+          quantity: batch.quantity.toString(),
 
-        ]
+          certHash: batch.certHash,
 
-      })
+          certType: batch.certType,
+
+          status: Number(batch.status),
+
+          plantingArea: batch.plantingAreaCode,
+
+          packingHouse: batch.packingHouseCode,
+
+          exportMarket: batch.exportMarket,
+
+          recalled: !batch.isActive,
+
+          recallReason: recallReason
+
+        });
+
+    }
+    catch(err){
+
+        setProduct(null);
+
+        alert("Không tìm thấy sản phẩm");
 
     }
 
-    else{
+}
+useEffect(() => {
 
-      setProduct(null);
+    if(qrBatchId){
 
-      alert("Không tìm thấy sản phẩm");
+        searchProduct(qrBatchId);
 
     }
 
-  }
-
-
+}, [qrBatchId]);
 
   const scanQR = () => {
+    if (
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getUserMedia
+    ) {
 
-    alert("Mở camera quét QR");
+        alert(
+            "Chức năng quét QR sẽ mở camera."
+        );
 
-  }
+    } else {
+
+        alert("Thiết bị không hỗ trợ camera.");
+
+    }
+
+};
 
 
 
@@ -278,7 +307,7 @@ style={{
       {/* RESULT */}
 
 
-      {
+     {
 
       product &&
 
@@ -306,46 +335,13 @@ style={{
         }}
 
       >
-
-
-
-        <img
-
-          src={product.image}
-
-          alt="product"
-
-          style={{
-
-            width:"250px",
-
-            height:"200px",
-
-            objectFit:"cover",
-
-            borderRadius:"20px",
-
-            display:"block",
-
-            margin:"auto"
-
-          }}
-
-        />
-
-
-
         <h2
-
-          style={{
-
-            textAlign:"center"
-
-          }}
-
+        style={{
+        textAlign:"center"
+        }}
         >
 
-          {product.name}
+        Batch: {product.batchCode}
 
         </h2>
 
@@ -356,9 +352,24 @@ style={{
           🌱 Nguồn gốc: {product.origin}
         </p>
 
+        <p>
+        🆔 Batch ID: {product.batchId}
+        </p>
 
         <p>
-          📅 Ngày thu hoạch: {product.harvest}
+        📍 Mã vùng trồng: {product.plantingArea}
+        </p>
+
+        <p>
+        🏭 Cơ sở đóng gói: {product.packingHouse}
+        </p>
+
+        <p>
+        🌍 Thị trường xuất khẩu: {product.exportMarket}
+        </p>
+
+        <p>
+        📦 Số lượng: {product.quantity}
         </p>
 
 
@@ -380,12 +391,43 @@ style={{
 
           >
 
-            {product.status}
-
+            {
+          [
+          "Created",
+          "Harvested",
+          "Processing",
+          "Packed",
+          "Transporting",
+          "Delivered",
+          "Recalled"
+          ][product.status]
+          }
           </span>
 
         </p>
+        {safeInfo && (
+        <>
+        <h3>Đánh giá an toàn</h3>
 
+        <p
+          style={{
+            color: safeInfo.safe ? "#00ff99" : "#ff4444",
+            fontWeight:"bold"
+          }}
+        >
+          {safeInfo.message}
+        </p>
+        </>
+        )}
+
+        {
+          product.recalled && (
+            <div style={{ color:"#ff4444" }}>
+              <p>⚠️ Lô hàng đã bị thu hồi</p>
+              <p>Lý do: {product.recallReason}</p>
+            </div>
+          )
+        }
 
 
 
@@ -399,46 +441,52 @@ style={{
 
         {
 
-          product.timeline.map((item,index)=>(
+          history.map((item,index)=>(
 
-            <div
+          <div
+          key={index}
+          style={{
+          borderLeft:"3px solid #22d3ee",
+          paddingLeft:"20px",
+          marginBottom:"20px"
+          }}
+          >
 
-              key={index}
+          <p>
 
-              style={{
+          Trạng thái:
 
-                borderLeft:"3px solid #22d3ee",
+          {
+          [
+          "Created",
+          "Harvested",
+          "Processing",
+          "Packed",
+          "Transporting",
+          "Delivered",
+          "Recalled"
+          ][Number(item.status)]
+          }
 
-                paddingLeft:"20px",
+          </p>
 
-                marginBottom:"20px"
+          <p>
 
-              }}
+          {
+          new Date(
+          Number(item.timestamp)*1000
+          ).toLocaleString()
+          }
 
-            >
+          </p>
 
-              <b>
+          <p>
 
-                {item.title}
+          {item.actor}
 
-              </b>
+          </p>
 
-              <p>
-
-                {item.date}
-
-              </p>
-
-
-              <small>
-
-                {item.desc}
-
-              </small>
-
-
-            </div>
-
+          </div>
 
           ))
 
@@ -452,54 +500,84 @@ style={{
           Chứng nhận
 
         </h3>
+        
+          <p>
 
+          📄 Loại chứng nhận:
 
+          {product.certType}
 
-        {
+          </p>
 
-          product.certificates.map((c,index)=>(
+          <a
 
-            <span
+          href={`https://gateway.pinata.cloud/ipfs/${product.certHash}`}
 
+          target="_blank"
+
+          rel="noreferrer"
+
+          style={{color:"#22d3ee"}}
+
+          >
+
+          Xem chứng nhận
+
+          </a>
+          <h3>
+
+          Lịch sử vận chuyển
+
+          </h3>
+        
+          {
+
+          transportHistory.map((item,index)=>(
+
+            <div
               key={index}
-
               style={{
 
-                display:"inline-block",
+                borderLeft:"3px solid #00ff99",
 
-                background:"rgba(0,255,153,0.15)",
+                paddingLeft:"20px",
 
-                border:"1px solid #00ff99",
-
-                padding:"8px 15px",
-
-                borderRadius:"20px",
-
-                marginRight:"10px"
+                marginBottom:"15px"
 
               }}
-
             >
+          
+              <p>
 
-              ✅ {c}
+                Địa điểm:
 
-            </span>
+                {item.location}
 
+              </p>
+
+              <p>
+
+                Nhiệt độ:
+
+                {item.temperature.toString()}°C
+
+              </p>
+
+              <p>
+
+                {
+                  new Date(
+                    Number(item.timestamp)*1000
+                  ).toLocaleString()
+                }
+              </p>
+
+            </div>
 
           ))
-
-        }
-
-
-
+          }
       </div>
-
-
-      }
-
-
-    </div>
-
+     } 
+        </div>
   );
-
-}
+  }
