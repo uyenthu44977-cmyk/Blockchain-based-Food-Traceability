@@ -139,7 +139,7 @@ useEffect(() => {
     }
 
 
-}, [qrBatchId]);
+}, [qrBatchId, searchProduct]);
 
 
   const scanQR = () => {

@@ -1,7 +1,4 @@
-import {
-  useState,
-  useEffect
-} from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useWeb3 } from "../context/Web3Context";
 
@@ -122,7 +119,7 @@ useState({
     alert("Không thể lấy QR cho batch này. Vui lòng thử lại.");
   }
 };
-  const loadCertificates = async () => {
+  const loadCertificates = useCallback(async () => {
 
 
 
@@ -169,7 +166,7 @@ useState({
 
 
 
-};
+}, [address]);
 const createBatch = async () => {
   try {
     const cert = certificates.find(
@@ -388,7 +385,7 @@ setSelectedCert("");
 
 
 
-  }, [address]);
+  }, [address, loadCertificates]);
   return (
     <div style={styles.container}>
       {loading && <p style={styles.globalLoading}>Đang xử lý giao dịch dữ liệu lên Blockchain...</p>}
