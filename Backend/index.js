@@ -121,7 +121,7 @@ const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "";
 // ABI là danh sách các hàm có trong smart contract
 // Frontend và Backend cần ABI để biết cách gọi đúng hàm
 // Đọc ABI từ file artifacts/FoodTrace.sol/FoodTrace.json
-const FoodTraceArtifact = require('../artifacts/contracts/FoodTrace.sol/FoodTrace.json');
+const FoodTraceArtifact = require('./abi/FoodTrace.json');
 const CONTRACT_ABI = FoodTraceArtifact.abi;
 // Hàm tạo đối tượng contract để gọi các hàm bên trong nó
 function getContract() {
