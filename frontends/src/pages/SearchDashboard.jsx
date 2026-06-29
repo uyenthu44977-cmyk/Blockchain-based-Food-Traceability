@@ -143,25 +143,8 @@ useEffect(() => {
 }, [qrBatchId]);
 
 
-  const scanQR = () => {
-    if (
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getUserMedia
-    ) {
 
 
-        alert(
-            "Chức năng quét QR sẽ mở camera."
-        );
-
-
-    } else {
-
-
-        alert("Thiết bị không hỗ trợ camera.");
-
-
-    }
 
 
 
@@ -776,5 +759,5 @@ style={{
      }
         </div>
   );
-  }
+
 
