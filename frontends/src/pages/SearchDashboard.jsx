@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback} from "react";
 import { useSearchParams } from "react-router-dom";
 import { ethers } from "ethers";
 import contractArtifact from "../abi/FoodTrace.json";
@@ -38,7 +38,7 @@ export default function SearchDashboard() {
   const [safeInfo, setSafeInfo] = useState(null);
 
 
- const searchProduct = async (id = batchId) => {
+ const searchProduct = useCallback(async (id = batchId) => {
   console.log("Contract:", contract);
   console.log("BatchID:", id);
     try{
@@ -132,38 +132,15 @@ export default function SearchDashboard() {
     }
 
 
-}
+}, [batchId]);
 useEffect(() => {
     if(qrBatchId){
         searchProduct(qrBatchId);
     }
 
 
-}, [qrBatchId]);
+}, [qrBatchId, searchProduct]);
 
-
-  const scanQR = () => {
-    if (
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getUserMedia
-    ) {
-
-
-        alert(
-            "Chức năng quét QR sẽ mở camera."
-        );
-
-
-    } else {
-
-
-        alert("Thiết bị không hỗ trợ camera.");
-
-
-    }
-
-
-};
 
 
 
@@ -308,7 +285,7 @@ style={{
               background:"rgba(0,0,0,0.4)",
 
 
-              boFrder:"2px solid #22d3ee",
+              border:"2px solid #22d3ee",
 
 
               color:"white",
