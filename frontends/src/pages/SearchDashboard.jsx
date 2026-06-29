@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ethers } from "ethers";
 import contractArtifact from "../abi/FoodTrace.json";
@@ -38,7 +38,7 @@ export default function SearchDashboard() {
   const [safeInfo, setSafeInfo] = useState(null);
 
 
- const searchProduct = useCallback(async (id = batchId) => {
+ const searchProduct = async (id = batchId) => {
   console.log("Contract:", contract);
   console.log("BatchID:", id);
     try{
@@ -130,16 +130,17 @@ export default function SearchDashboard() {
 
 
     }
-  }, [batchId]);
 
 
+
+}
 useEffect(() => {
     if(qrBatchId){
         searchProduct(qrBatchId);
     }
 
 
-}, [qrBatchId, searchProduct]);
+}, [qrBatchId]);
 
 
   const scanQR = () => {
@@ -159,8 +160,9 @@ useEffect(() => {
 
         alert("Thiết bị không hỗ trợ camera.");
 
+
     }
-    
+
 
 
 };
@@ -296,7 +298,7 @@ style={{
             style={{
 
 
-              flex:1,
+              width:"100%",
 
 
               padding:"15px",
@@ -308,7 +310,7 @@ style={{
               background:"rgba(0,0,0,0.4)",
 
 
-              border:"2px solid #22d3ee",
+              boFrder:"2px solid #22d3ee",
 
 
               color:"white",
@@ -317,7 +319,10 @@ style={{
               fontSize:"15px",
 
 
-              outline:"none"
+              outline:"none",
+
+
+              boxSizing:"border-box"
 
 
             }}
@@ -328,69 +333,8 @@ style={{
 
 
 
-
-
-          <button
-
-
-            onClick={scanQR}
-
-
-            style={{
-
-
-              padding:"15px 25px",
-
-
-              borderRadius:"20px",
-
-
-              background:"transparent",
-
-
-              color:"#00ff99",
-
-
-              border:"2px solid #00ff99",
-
-
-              cursor:"pointer",
-
-
-              fontSize:"15px",
-
-
-              boxShadow:
-
-
-              "0 0 15px #00ff99"
-
-
-            }}
-
-
-          >
-
-
-            Quét QR
-
-
-          </button>
-
-
-
-
         </div>
-
-
-
-
-
-
-
-
-
-
+        
         <button
           onClick={() => searchProduct(batchId)}
 
@@ -603,7 +547,7 @@ style={{
 
         <p
           style={{
-            color: safeInfo.safe ? "#00ff99" : "#ff4444",
+            color: safeInfo.safe ? "#00ff99" : "#c6c31b",
             fontWeight:"bold"
           }}
         >
@@ -832,7 +776,5 @@ style={{
      }
         </div>
   );
+  }
 
-
-
-}

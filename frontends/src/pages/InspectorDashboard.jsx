@@ -31,7 +31,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
 
 
-          "https://blockchain-based-food-traceability.onrender.com/api/certificates/certificates"
+          "https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/certificates"
 
 
 
@@ -101,7 +101,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
         // cập nhật mongodb
         await fetch(
-          `https://blockchain-based-food-traceability.onrender.com/api/certificates/${cert._id}/approve`,
+          `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/${cert._id}/approve`,
           {
             method:"PUT",
             headers:{
@@ -184,7 +184,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
 
 
-          `https://blockchain-based-food-traceability.onrender.com/api/certificates/${cert._id}/reject`,
+          `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/${cert._id}/reject`,
 
 
 
@@ -407,6 +407,10 @@ const isAdminView = viewMode === "ADMIN_VIEW";
       href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
       target="_blank"
       rel="noreferrer"
+      style={{
+      color: "#fff",
+      textDecoration: "none"
+    }}
       >
       Xem chứng nhận
       </a>
@@ -515,7 +519,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
 
 
-      <p style={{color:"#00ff66"}}>
+      <p style={{color:"#f7fbf9"}}>
       <p><b>Batch ID:</b> {cert.batchId}</p>
 
 
@@ -535,10 +539,23 @@ const isAdminView = viewMode === "ADMIN_VIEW";
       href={`https://gateway.pinata.cloud/ipfs/${cert.certHash}`}
       target="_blank"
       rel="noreferrer"
+      style={{
+      color: "#fff",
+      textDecoration: "none"
+    }}
       >
       Xem chứng nhận
       </a>
-      Đã duyệt
+
+      <span
+        style={{
+          color: "#00ff66",
+          fontWeight: "bold",
+          marginLeft: "12px"
+        }}
+      >
+        Đã duyệt
+      </span>
 
 
 
