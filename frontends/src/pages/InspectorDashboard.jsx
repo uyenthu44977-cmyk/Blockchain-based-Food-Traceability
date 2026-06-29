@@ -31,7 +31,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
 
 
-          "http://localhost:3002/api/certificates/certificates"
+          "https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/certificates"
 
 
 
@@ -101,7 +101,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
         // cập nhật mongodb
         await fetch(
-          `http://localhost:3002/api/certificates/${cert._id}/approve`,
+          `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/${cert._id}/approve`,
           {
             method:"PUT",
             headers:{
@@ -184,7 +184,7 @@ const isAdminView = viewMode === "ADMIN_VIEW";
 
 
 
-          `http://localhost:3002/api/certificates/${cert._id}/reject`,
+          `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/${cert._id}/reject`,
 
 
 
