@@ -92,7 +92,7 @@ export default function CertificateManagement() {
 
         const res =
           await fetch(
-            "https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/upload-certificate",
+            "https://blockchain-based-food-traceability.onrender.com/api/certificates/upload-certificate",
             {
               method: "POST",
               body: data

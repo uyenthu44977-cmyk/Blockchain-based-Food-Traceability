@@ -135,7 +135,7 @@ useState({
 
 
     const res = await fetch(
-      `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/farmer/${address}`
+      `https://blockchain-based-food-traceability.onrender.com/api/certificates/farmer/${address}`
     );
 
 
@@ -207,7 +207,7 @@ const createBatch = async () => {
     const receipt = await tx.wait();
     const batchId = receipt.logs[0].args[0].toString();
       await fetch(
-      `https://blockchain-based-food-traceability-production.up.railway.app/api/certificates/${selectedCert}/use`,
+      `https://blockchain-based-food-traceability.onrender.com/api/certificates/${selectedCert}/use`,
       {
       method:"PUT",
       headers:{
